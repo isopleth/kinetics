@@ -1,0 +1,70 @@
+env = Environment()
+
+env.Append(CXXFLAGS="-O3 -Wall -std=c++17 -I.")
+
+env.Program(target = "bounding_box",
+	source = ["bounding_box.cpp", "Row.cpp",
+	"SquareMatrix.cpp", "SensorParameter.cpp", "util.cpp"],
+	LIBS=["stdc++fs", "pthread"])
+
+env.Program(target = "cleaner",
+	source = ["cleaner.cpp", "SlidingWindowMedian.cpp",
+	"Mean.cpp", "Row.cpp", "util.cpp", "Rows.cpp",
+	"cleaner_files/Reduce.cpp",
+	"cleaner_files/Parameters.cpp",
+	"SensorParameter.cpp",
+	"SquareMatrix.cpp",
+	"Option.cpp" ],
+	LIBS=["rtfilter", "pthread", "stdc++fs", "stxxl"])
+
+env.Program(target = "day_splitter",
+	source = ["day_splitter.cpp", "util.cpp"], LIBS=["stdc++fs"])
+
+env.Program(target = "extract_phone",
+	source = ["extract_phone.cpp", "util.cpp", "PhoneDataConverter.cpp"],
+	LIBS=["stdc++fs"])
+
+env.Program(target = "trim",
+	source = ["trim.cpp", "util.cpp"], LIBS=["stdc++fs"])
+
+env.Program(target = "split_times",
+	source = ["split_times.cpp", "util.cpp",
+	"Row.cpp", "SquareMatrix.cpp", "SensorParameter.cpp"],
+	LIBS=["stdc++fs", "pthread"])
+
+moveSplitter = env.Command("../day_splitter",
+	     "day_splitter",
+	     "cp day_splitter ../")
+
+moveExtractPhone = env.Command("../extract_phone",
+	     "extract_phone",
+	     "cp extract_phone ../")
+
+moveCleaner = env.Command("../cleaner",
+	    "cleaner",
+	    "cp cleaner ../")
+
+moveSplitTimes = env.Command("../split_times",
+	    "split_times",
+	    "cp split_times ../")
+
+moveTrim = env.Command("../trim",
+	 "trim",
+	 "cp trim ../")
+
+moveBoundingBox = env.Command("../bounding_box",
+	 "bounding_box",
+	 "cp bounding_box ../")
+
+env.Default("bounding_box")
+env.Default("cleaner")
+env.Default("day_splitter")
+env.Default("extract_phone")
+env.Default("split_times")
+env.Default("trim")
+env.Default(moveBoundingBox)
+env.Default(moveCleaner)
+env.Default(moveExtractPhone)
+env.Default(moveSplitTimes)
+env.Default(moveSplitter)
+env.Default(moveTrim)
