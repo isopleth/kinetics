@@ -162,14 +162,13 @@ auto process(const string& infilename,
       }
 
       auto row = Row(datetime,
-		     epoch,
 		     (latitude - box.minLat) * distance,
 		     (longitude - box.minLon) * distance,
 		     altitude,
 		     accuracy,
 		     speed);
 		     
-      outfile << row.toString(LOCATION);
+      outfile << row.toString(LOCATION, false);
       outCount++;
     }
   }
@@ -241,7 +240,7 @@ auto usage() -> void {
 auto main(int argc, char** argv) -> int {
   
   if (argc != 3) {
-    cerr << "Usage: " << programName << " <input file> <location file>" << endl;
+    cerr << "Usage: " << programName << " <input file> <output file> <location file>" << endl;
     return EXIT_FAILURE;
   }
 
@@ -298,7 +297,7 @@ auto main(int argc, char** argv) -> int {
 
   cout << programName << " " << inFilename << " ->> " << outFilename << endl;
 
-  if (!util::exists(locationFilename)) {
+  if (!fs::exists(locationFilename)) {
     cerr << programName << ": " << locationFilename << " does not exist";
     return EXIT_FAILURE;
   }
@@ -306,10 +305,13 @@ auto main(int argc, char** argv) -> int {
   auto box = BoundingBox{locationFilename};
   box.show();
 
+  auto generate = force;
+  if (!generate && !fs::exists(outFilename)) {
+    generate = true;
+  }
+
   if (force) {
     process(inFilename, outFilename, box);
-  }
-  else if (!fs::exists(outFilename)) {
   }
   return EXIT_SUCCESS;
 }

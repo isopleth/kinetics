@@ -21,6 +21,10 @@ private:
   std::string datetime;
 
   static constexpr auto LOCATION_HEADER = "datetime, epoch, latitude, longitude, altitude, accuracy, speed\r\n";
+  static constexpr auto KINETIC_HEADER = "datetime, epoch, x, y, z, total\r\n";
+  static constexpr auto KINETIC_PLUS_HEADER =  "datetime, epoch, x, y, z, total, xfilt, yfilt, zfilt, totalfilt\r\n";
+
+  auto getDateTimeMillis() const -> unsigned long;
   
 public:
   Row();
@@ -29,8 +33,7 @@ public:
 			COOKED = 1};
 
   auto getDatetime() const -> std::string;
-  auto getSecond() const -> unsigned long;
-  auto getDatetimeEpoch() const -> unsigned long;
+  auto getDatetimeEpoch(bool millisecondsEpoch) const -> unsigned long;
 
   Row(const std::string& datetime,
       const double x,
@@ -43,7 +46,7 @@ public:
       const double z1,
       const double x2,
       const double y2,
-      const double z2);
+      const double z2 = 0);
 
   static auto heading(const SensorParameter& sensor) -> std::string;
 
@@ -58,8 +61,9 @@ public:
 
   static auto getLocationHeader() -> std::string;
 
-  auto toString(const SensorParameter& sensor) const -> std::string;
-
+  auto toString(const SensorParameter& parameters,
+		bool millisecondsEpoch) const -> std::string;
+  
 private:
   auto truncate(int val, unsigned bitmask) -> int;
 

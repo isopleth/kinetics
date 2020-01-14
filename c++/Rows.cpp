@@ -158,7 +158,7 @@ auto Rows::getValue(std::size_t index,
  * @return number of seconds since 1/1/1970
  */
 auto Rows::getSecond(std::size_t index) const -> unsigned long {
-  return makeRow(rows.at(index)).getDatetimeEpoch();
+  return makeRow(rows.at(index)).getDatetimeEpoch(false);
 }
 
 /**

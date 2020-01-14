@@ -128,9 +128,12 @@ static auto baseline(const cleaner::Parameters& parameters,
  * Estimate the sample rate
  *
  * @params rows data from the file
+ * @param sampleRateFilename file to write sample rate info to
  * @return estimated sample rate
  */
-static auto getSampleRate(const Rows& rows) {
+static auto getSampleRate(const Rows& rows,
+			  const std::string& sampleRateFilename) {
+
   auto oldSecond = 0ul;
   auto samplesInCurrentSecond = 0ul;
   auto first = true;
@@ -157,16 +160,24 @@ static auto getSampleRate(const Rows& rows) {
     samplesInCurrentSecond++;
   }
 
+  cout << "Log sample rate info to " << sampleRateFilename << endl;
+  auto sampleRateFile = ofstream{sampleRateFilename};
+  
   auto meanSampleRate = Mean{};
   for (const auto& it: binSizes) {
-    cout << "Seconds with "
-	 << it.first
-	 << " samples in them = "
-	 << it.second
-	 << endl;
+    auto outputLine = stringstream{};
+    outputLine << "Seconds with "
+	       << it.first
+	       << " samples in them = "
+	       << it.second;
+    cout << outputLine.str() << endl;
+    
+    sampleRateFile << outputLine.str() << endl;
+
     meanSampleRate.addMultiple(it.first, it.second);
   }
-
+  sampleRateFile.close();
+  
   if (!meanSampleRate.getCount()) {
     cout << "No sample rate because no samples" << endl;
     return 0.0;
@@ -261,8 +272,7 @@ static auto processLocation(Rows& rows, const filesystem::path& infilename) {
       cout << inCount << " lines read\r";
       cout.flush();
     }
-    rows.push_back(datetime, latitude, longitude,
-		   altitude, accuracy, speed);
+    rows.push_back(datetime, latitude, longitude, altitude, accuracy, speed);
   }
   return inCount;
 }
@@ -272,19 +282,19 @@ static auto processLocation(Rows& rows, const filesystem::path& infilename) {
  * a single output file from it.
  *
  * @param infilename input filename
- * @param outfilename output filename
+ * @param outFilename output filename
  * @param parameters run-time parameters setting. May be updated.
  */
 static auto process(const filesystem::path& infilename,
-		    const filesystem::path& outfilename,
+		    const filesystem::path& outFilename,
 		    cleaner::Parameters& parameters) -> void {
 
   // Check if we actually have to do anything
   auto alwaysGenerateFile = parameters.alwaysRegenerateFile();
 
   if (!alwaysGenerateFile) {
-    alwaysGenerateFile = !util::exists(outfilename);    
-    cout << "\n" << progname << ": " << outfilename
+    alwaysGenerateFile = !util::exists(outFilename);    
+    cout << "\n" << progname << ": " << outFilename
 	 << " does not exist, so generating it" << endl;
   }
 
@@ -292,7 +302,7 @@ static auto process(const filesystem::path& infilename,
   if (alwaysGenerateFile) {
 
     auto start = chrono::steady_clock::now();
-    cout << progname << ": " << infilename << " ->> " << outfilename << endl;
+    cout << progname << ": " << infilename << " ->> " << outFilename << endl;
 
     auto sstream = stringstream{};
     sstream.precision(6);
@@ -336,7 +346,10 @@ static auto process(const filesystem::path& infilename,
     cout << "----------------------------------------\n";
 
     if (parameters.detectSampleRate()) {
-      parameters.setSampleRate(getSampleRate(rows));
+      auto sampleRateFilename = outFilename.stem();
+      sampleRateFilename += filesystem::path("_rate");
+      sampleRateFilename += ".txt";
+      parameters.setSampleRate(getSampleRate(rows, sampleRateFilename));
     }
     
     // Remove the baseline. Only do this for the AX3 because it has a
@@ -355,12 +368,12 @@ static auto process(const filesystem::path& infilename,
     case SensorParameter::SensorType::PHONE_ACCELEROMETER:
     case SensorParameter::SensorType::PHONE_GYROSCOPE:
     case SensorParameter::SensorType::AX3_ACCELEROMETER:
-      outCount = Reduce().reduce(parameters, rows, outfilename);
+      outCount = Reduce().reduce(parameters, rows, outFilename);
       break;
       
     case SensorParameter::SensorType::LOCATION:
     case SensorParameter::SensorType::GPS_LOC:
-      outCount = Reduce().noreduce(parameters, rows, outfilename);
+      outCount = Reduce().noreduce(parameters, rows, outFilename);
       break;
     
     default:
@@ -381,7 +394,7 @@ static auto process(const filesystem::path& infilename,
     util::allDone(cout, progname);
   }
   else {
-    cout << progname << ": " << outfilename
+    cout << progname << ": " << outFilename
 	 << " already exists, so skipping it" << endl;
   }
 }
@@ -526,7 +539,6 @@ auto main(int argc, char** argv) -> int {
     }
     else if (typeString.empty()) {
       typeString = argv[index];
-      cout << typeString << endl;
     }
     else {
       cerr << "Extra parameter provided" << endl;

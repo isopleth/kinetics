@@ -71,7 +71,7 @@ auto Reduce::reduce(const Parameters& parameters,
 			  means[3].getAverage(),
 			  means[4].getAverage(),
 			  means[5].getAverage()};
-	out << theRow.toString(parameters);
+	out << theRow.toString(parameters, false);
 	outCount++;
 
 	// Clear down the means
@@ -133,7 +133,7 @@ auto Reduce::noreduce(const Parameters& parameters,
 		      rows.getValue(rowIndex, 3),
 		      rows.getValue(rowIndex, 4),
 		      rows.getValue(rowIndex, 5)};
-    out << theRow.toString(parameters);
+    out << theRow.toString(parameters, false);
     outCount++;
   }
   out.close();

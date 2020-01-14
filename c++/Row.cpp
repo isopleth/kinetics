@@ -136,17 +136,48 @@ auto Row::quantize(double value) -> int {
 }
 
 /**
- * Convert datetime to milliseconds since 1/1/70
+ * Convert datetime to seconds since 1/1/70
  *
+ * @param millisecondsEpoch true for epoch in milliseconds, false for seconds
  * @return epoch date time
  */
-auto Row::getDatetimeEpoch() const -> unsigned long {
+auto Row::getDatetimeEpoch(bool millisecondsEpoch) const -> unsigned long {
   struct tm tm = {};
   
-  // 2019-07-22 15:00:04
-  auto ss = istringstream(datetime);
+  // e.g. 2019-07-22 15:00:04
+  auto ss = istringstream(datetime.substr(0,19));
   ss >> get_time(&tm, "%Y-%m-%d %H:%M:%S");
-  return mktime(&tm);
+  auto epoch =  mktime(&tm);
+  if (millisecondsEpoch) {
+    return epoch * 1000 + getDateTimeMillis();
+  }
+  else if (getDateTimeMillis() >= 500) {
+    epoch++;
+  }
+  return epoch;
+}
+
+
+
+/**
+ * Get the milliseconds component of the date time, if there is one
+ *
+ * @return milliseconds, or 0 if none
+ */
+auto Row::getDateTimeMillis() const -> unsigned long {
+  if (datetime.size() > 19) {
+    auto millisString = datetime.substr(20,3);
+    if (util::isNumber(millisString)) {
+      auto millis = stoul(millisString);
+      auto power = millisString.length() - 3;
+      while (power < 3) {
+	millis = millis * 10;
+	power++;
+      }
+      return millis;
+    }    
+  }
+  return 0;
 }
 
 
@@ -158,7 +189,7 @@ auto Row::sstringValues(stringstream& sstream,
 			const SensorParameter& parameters, 
 			DataType dataType) const -> void {
   sstream.precision(12);
-  auto acc = double{0};
+  auto acc = 0.0;
   for (auto axis = size_t{0}; axis < 3; axis++) {
     sstream << ",";
     auto val = at(3*static_cast<size_t>(dataType) + axis);
@@ -261,12 +292,12 @@ auto Row::putValue(DataType dataType,
 auto Row::heading(const SensorParameter& parameters) -> string {
   switch (parameters.getType()) {
   case Sensor::PHONE_GYROSCOPE:
-    return "datetime, epoch, x, y, z, total\r\n";
   case Sensor::PHONE_ACCELEROMETER:
-    return "datetime, epoch, x, y, z, total\r\n";
+    return KINETIC_HEADER;
+
   case Sensor::AX3_ACCELEROMETER:
-    return "datetime, epoch, x, y, z, total, "
-      "xfilt, yfilt, zfilt, totalfilt\r\n";
+    return KINETIC_PLUS_HEADER;
+
   case Sensor::GPS_LOC:
   case Sensor::LOCATION:
     return LOCATION_HEADER;
@@ -282,13 +313,13 @@ auto Row::heading(const SensorParameter& parameters) -> string {
  * @param type sensor type
  * @return string representation
  */
-auto Row::toString(const SensorParameter& parameters) const -> string {
+auto Row::toString(const SensorParameter& parameters,
+		   bool millisecondsEpoch) const -> string {
   auto sstream = stringstream{};
-  auto datetimeString = datetime;
-  auto datetimeEpoch = getDatetimeEpoch();
-  sstream << datetimeString;
+
+  sstream << datetime;
   sstream << ",";
-  sstream << datetimeEpoch;
+  sstream << getDatetimeEpoch(millisecondsEpoch);
 
   if (parameters.isLocation()) {
     // RAW and COOKED don't really have any meaning here.  We just use

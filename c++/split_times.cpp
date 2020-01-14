@@ -98,14 +98,13 @@ auto process(const filesystem::path& inputFilename,
       }
 
       auto row = Row(datetime,
-		     epoch,
 		     latitude,
 		     longitude,
 		     altitude,
 		     accuracy,
 		     speed);
 		     
-      outfile << row.toString(LOCATION);
+      outfile << row.toString(LOCATION, false);
     }
     cout << endl;
   }
