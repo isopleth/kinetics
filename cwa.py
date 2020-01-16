@@ -48,7 +48,7 @@
 # - Output to an ascii file instead of an Sqlite database
 # - Output annotations to another file, <original_file>_metadata.txt
 # - Add some more annotation abbreviations
-# - Don't print a * for every record converted, just a summaryoccasionally
+# - Don't print a * for every record converted, just a summary occasionally
 # - Some re-arrangement of the code
 #
 
@@ -252,7 +252,10 @@ class CWA:
                         timeFractional = 0                    
                         # if top-bit set, we have a fractional date
                         if deviceId & 0x8000:
-                            # Need to undo backwards-compatible shim by calculating how many whole samples the fractional part of timestamp accounts for.
+                            # Need to undo backwards-compatible shim
+                            # by calculating how many whole samples
+                            # the fractional part of timestamp
+                            # accounts for.
                             timeFractional = (deviceId & 0x7fff) * 2     # use original deviceId field bottom 15-bits as 16-bit fractional time
                             timestampOffset += (timeFractional * int(freq)) // 65536 # undo the backwards-compatible shift (as we have a true fractional)
                             timeFractional = float(timeFractional) / 65536
