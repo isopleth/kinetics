@@ -899,7 +899,11 @@ atexit(_getch);
 
     for (i = 1; i < argc; i++)
     {
-        if (argv[i][0] == '-' || argv[i][0] == '/')
+        if (argv[i][0] == '-'
+#ifndef __linux__
+	    || argv[i][0] == '/'
+#endif
+	    )
         {
             if (strcasecmp(argv[i], "--help") == 0)
             {
@@ -990,6 +994,7 @@ atexit(_getch);
     if (help)
     {
         fprintf(stderr, "CWA-Convert by Daniel Jackson, 2010-2012\n");
+	fprintf(stderr, "Modified by Jason Leake, 2020\n");
         fprintf(stderr, "Usage: CWA <filename.cwa> [-s:accel|-s:gyro] [-f:csv|-f:raw|-f:wav"
 #ifdef SQLITE
             "|-f:sqlite"
