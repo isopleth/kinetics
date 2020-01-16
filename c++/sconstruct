@@ -38,39 +38,24 @@ env.Program(target = "split_times",
 	Row, SquareMatrix, SensorParameter],
 	LIBS=["stdc++fs", "pthread"])
 
-moveSplitter = env.Command("../day_splitter",
-	     "day_splitter",
-	     "cp day_splitter ../")
+env.Program(target = "cwa-convert",
+	    source = ["cwa-convert_files/main.c",
+	              "cwa-convert_files/cwa.c",
+                      "cwa-convert_files/sqlite3.c"],
+	    LIBS=["dl", "m", "pthread"])
 
-moveExtractPhone = env.Command("../extract_phone",
-	     "extract_phone",
-	     "cp extract_phone ../")
-
-moveCleaner = env.Command("../cleaner",
-	    "cleaner",
-	    "cp cleaner ../")
-
-moveSplitTimes = env.Command("../split_times",
-	    "split_times",
-	    "cp split_times ../")
-
-moveTrim = env.Command("../trim",
-	 "trim",
-	 "cp trim ../")
-
-moveBoundingBox = env.Command("../bounding_box",
-	 "bounding_box",
-	 "cp bounding_box ../")
 
 env.Default("bounding_box")
 env.Default("cleaner")
+env.Default("cwa-convert")
 env.Default("day_splitter")
 env.Default("extract_phone")
 env.Default("split_times")
 env.Default("trim")
-env.Default(moveBoundingBox)
-env.Default(moveCleaner)
-env.Default(moveExtractPhone)
-env.Default(moveSplitTimes)
-env.Default(moveSplitter)
-env.Default(moveTrim)
+env.Default(env.Command("../bounding_box", "bounding_box", "cp bounding_box ../"))
+env.Default(env.Command("../cleaner", "cleaner", "cp cleaner ../"))
+env.Default(env.Command("../cwa-convert", "cwa-convert", "cp cwa-convert ../"))
+env.Default(env.Command("../day_splitter", "day_splitter", "cp day_splitter ../"))
+env.Default(env.Command("../extract_phone", "extract_phone", "cp extract_phone ../"))
+env.Default(env.Command("../split_times", "split_times", "cp split_times ../"))
+env.Default(env.Command("../trim", "trim", "cp trim ../"))
