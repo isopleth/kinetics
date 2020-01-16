@@ -2,34 +2,40 @@ env = Environment()
 
 env.Append(CXXFLAGS="-O3 -Wall -std=c++17 -I.")
 
+util = env.Object("util.cpp")
+Row = env.Object("Row.cpp")
+SensorParameter = env.Object("SensorParameter.cpp")
+SquareMatrix = env.Object("SquareMatrix.cpp")
+
+
 env.Program(target = "bounding_box",
-	source = ["bounding_box.cpp", "Row.cpp",
-	"SquareMatrix.cpp", "SensorParameter.cpp", "util.cpp"],
+	source = ["bounding_box.cpp", Row,
+	SquareMatrix, SensorParameter, util],
 	LIBS=["stdc++fs", "pthread"])
 
 env.Program(target = "cleaner",
 	source = ["cleaner.cpp", "SlidingWindowMedian.cpp",
-	"Mean.cpp", "Row.cpp", "util.cpp", "Rows.cpp",
+	"Mean.cpp", Row, util, "Rows.cpp",
 	"cleaner_files/Reduce.cpp",
 	"cleaner_files/Parameters.cpp",
-	"SensorParameter.cpp",
-	"SquareMatrix.cpp",
+	SensorParameter,
+	SquareMatrix,
 	"Option.cpp" ],
 	LIBS=["rtfilter", "pthread", "stdc++fs", "stxxl"])
 
 env.Program(target = "day_splitter",
-	source = ["day_splitter.cpp", "util.cpp"], LIBS=["stdc++fs"])
+	source = ["day_splitter.cpp", util], LIBS=["stdc++fs"])
 
 env.Program(target = "extract_phone",
-	source = ["extract_phone.cpp", "util.cpp", "PhoneDataConverter.cpp"],
+	source = ["extract_phone.cpp", util, "PhoneDataConverter.cpp"],
 	LIBS=["stdc++fs"])
 
 env.Program(target = "trim",
-	source = ["trim.cpp", "util.cpp"], LIBS=["stdc++fs"])
+	source = ["trim.cpp", util], LIBS=["stdc++fs"])
 
 env.Program(target = "split_times",
-	source = ["split_times.cpp", "util.cpp",
-	"Row.cpp", "SquareMatrix.cpp", "SensorParameter.cpp"],
+	source = ["split_times.cpp", util,
+	Row, SquareMatrix, SensorParameter],
 	LIBS=["stdc++fs", "pthread"])
 
 moveSplitter = env.Command("../day_splitter",
