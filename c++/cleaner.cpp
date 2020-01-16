@@ -346,15 +346,15 @@ static auto process(const filesystem::path& infilename,
     cout << "----------------------------------------\n";
 
     if (parameters.detectSampleRate()) {
-      auto sampleRateFilename = outFilename.stem();
+      auto sampleRateFilename = outFilename.parent_path() / outFilename.stem();
       sampleRateFilename += filesystem::path("_rate");
       sampleRateFilename += ".txt";
       parameters.setSampleRate(getSampleRate(rows, sampleRateFilename));
     }
     
     // Remove the baseline. Only do this for the AX3 because it has a
-    // constant data rate.  Need to think how to do it for the phone
-    // data!
+    // notionally constant data rate.  Need to think how to do it for
+    // the phone data!
     if (parameters.getType() == SensorParameter::SensorType::AX3_ACCELEROMETER) {
       baseline(parameters,
 	       rows,
