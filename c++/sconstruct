@@ -39,9 +39,8 @@ env.Program(target = "split_times",
 	LIBS=["stdc++fs", "pthread"])
 
 env.Program(target = "cwa-convert",
-	    source = ["cwa-convert_files/main.c",
-	              "cwa-convert_files/cwa.c",
-                      "cwa-convert_files/sqlite3.c"],
+	    source = ["cwa-convert_files/main.cpp",
+	              "cwa-convert_files/cwa.cpp"],
 	    LIBS=["dl", "m", "pthread"])
 
 

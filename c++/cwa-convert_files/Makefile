@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -I.
 DEPS = cwa.h sqlite3.h
 LIBS = -lm -ldl -lpthread
-OBJ = main.o cwa.o sqlite3.o
+OBJ = main.o cwa.o 
 
 all: cwa-convert
 
