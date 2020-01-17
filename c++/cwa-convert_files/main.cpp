@@ -1,6 +1,10 @@
 // CWA Data Conversion
 // Dan Jackson, 2010-2012
 //
+// Modified by Jason Leake, 2020:
+// - Don't use / to mark start of option on Linux
+// - Convert to C++
+//
 // SQLite support added by Stefan Diewald <stefan.diewald@mytum.de>
 
 
@@ -13,12 +17,11 @@
 
 //#define SQLITE
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <time.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <cmath>
 #include <limits.h>
 
 #ifdef _DEBUG
@@ -39,7 +42,16 @@ typedef enum
 #endif
   } Format;
 typedef enum { VALUES_DEFAULT, VALUES_INT, VALUES_FLOAT } Values;
-typedef enum { TIME_DEFAULT, TIME_NONE, TIME_SEQUENCE, TIME_SECONDS, TIME_DAYS, TIME_SERIAL, TIME_EXCEL, TIME_MATLAB, TIME_BLOCK, TIME_TIMESTAMP } Time;
+typedef enum { TIME_DEFAULT,
+	       TIME_NONE,
+	       TIME_SEQUENCE,
+	       TIME_SECONDS,
+	       TIME_DAYS,
+	       TIME_SERIAL,
+	       TIME_EXCEL,
+	       TIME_MATLAB,
+	       TIME_BLOCK,
+	       TIME_TIMESTAMP } Time;
 typedef enum { 
 	      OPTIONS_NONE = 0x0000, 
 	      OPTIONS_LIGHT = 0x0001, 
@@ -56,6 +68,7 @@ typedef enum {
 
 //#define DEFAULT_SAMPLE_RATE 100.0f      // HACK: Remove this, use value from file.
 
+[[maybe_unused]]
 static void HexDump(const void *data, int length)
 {
   int o;
@@ -89,7 +102,8 @@ static unsigned short sum16(void *dataPointer, size_t lenBytes)
       value += *data++;
     }
   return value;
-  // TODO: Should've treated as unsigned shorts, then take sum and bitwise NOT, then add 1 -- then total sum of words would be zero.
+  // TODO: Should've treated as unsigned shorts, then take sum and
+  // bitwise NOT, then add 1 -- then total sum of words would be zero.
 }
 
 // 16-bit word-size addition, returns two's compliment
@@ -100,28 +114,39 @@ static unsigned short checksum16(void *data, size_t lenBytes)
 }
 
 
-#define SECTOR_SIZE 512
+constexpr auto SECTOR_SIZE = 512;
 static unsigned char buffer[SECTOR_SIZE];
 
 // Endian-independent short/long read/write
-static void fputshort(unsigned short v, FILE *fp) { fputc((unsigned char)((v >> 0) & 0xff), fp); fputc((unsigned char)((v >> 8) & 0xff), fp); }
-static void fputlong(unsigned long v, FILE *fp) { fputc((unsigned char)((v >> 0) & 0xff), fp); fputc((unsigned char)((v >> 8) & 0xff), fp); fputc((unsigned char)((v >> 16) & 0xff), fp); fputc((unsigned char)((v >> 24) & 0xff), fp); }
+static void fputshort(unsigned short v, FILE *fp) {
+  fputc((unsigned char)((v >> 0) & 0xff), fp);
+  fputc((unsigned char)((v >> 8) & 0xff), fp);
+}
+
+static void fputlong(unsigned long v, FILE *fp) {
+  fputc((unsigned char)((v >> 0) & 0xff), fp);
+  fputc((unsigned char)((v >> 8) & 0xff), fp);
+  fputc((unsigned char)((v >> 16) & 0xff), fp);
+  fputc((unsigned char)((v >> 24) & 0xff), fp);
+}
 
 
 static float AdcBattToPercent(unsigned int Vbat)
 {
-#define BATT_CHARGE_ZERO 614
-#define BATT_CHARGE_FULL 708
-#define BATT_FIT_CONST_1	666LU
-#define BATT_FIT_CONST_2	150LU
-#define BATT_FIT_CONST_3	538LU	
-#define BATT_FIT_CONST_4	8
-#define BATT_FIT_CONST_5	614LU
-#define BATT_FIT_CONST_6	375LU
-#define BATT_FIT_CONST_7	614LU	
-#define BATT_FIT_CONST_8	8
-#define USB_BUS_SENSE 0
 
+  constexpr auto  BATT_CHARGE_ZERO = 614;
+  constexpr auto BATT_CHARGE_FULL = 708;
+  constexpr auto BATT_FIT_CONST_1= 666LU;
+  constexpr auto BATT_FIT_CONST_2= 150LU;
+  constexpr auto BATT_FIT_CONST_3= 538LU;	
+  [[maybe_unused]] constexpr auto BATT_FIT_CONST_4= 8;
+  constexpr auto BATT_FIT_CONST_5= 614LU;
+  constexpr auto BATT_FIT_CONST_6= 375LU;
+  constexpr auto BATT_FIT_CONST_7= 614LU;	
+  [[maybe_unused]] constexpr auto BATT_FIT_CONST_8= 8;
+  constexpr auto USB_BUS_SENSE= 0;
+  
+  
   float temp; 
 	
   // Compensate for charging current
@@ -148,7 +173,19 @@ static float AdcBattToPercent(unsigned int Vbat)
 }
 
 
-static char DumpFile(const char *filename, const char *outfile, Stream stream, Format format, Values values, Time time, Options options, float amplify, unsigned long iStart, unsigned long iLength, unsigned long iStep, int blockStart, int blockCount)
+static char DumpFile(const char *filename,
+		     const char *outfile,
+		     Stream stream,
+		     Format format,
+		     Values values,
+		     Time time,
+		     Options options,
+		     float amplify,
+		     unsigned long iStart,
+		     unsigned long iLength,
+		     unsigned long iStep,
+		     int blockStart,
+		     int blockCount)
 {
   unsigned long outputSize = 0;
   unsigned long totalSamples = 0;
@@ -303,7 +340,7 @@ static char DumpFile(const char *filename, const char *outfile, Stream stream, F
             }
 	  else if (header == HEADER_USAGEBLOCK)
             {
-	      DataBlocksAvailable *dataBlocksAvailable;
+	      [[maybe_unused]] DataBlocksAvailable *dataBlocksAvailable;
 	      dataBlocksAvailable = (DataBlocksAvailable *)buffer;
 	      fprintf(stderr, "[UB]");
             }
@@ -311,7 +348,8 @@ static char DumpFile(const char *filename, const char *outfile, Stream stream, F
             {
 	      fprintf(stderr, "[SI]");
             }
-	  else if ((header == HEADER_ACCELEROMETER && stream == STREAM_ACCELEROMETER) || (header == HEADER_GYRO && stream == STREAM_GYRO))
+	  else if ((header == HEADER_ACCELEROMETER && stream == STREAM_ACCELEROMETER) ||
+		   (header == HEADER_GYRO && stream == STREAM_GYRO))
             {
 	      int i, z; // , requiredFloatBufferSize;
 #ifdef SQLITE
@@ -552,7 +590,9 @@ static char DumpFile(const char *filename, const char *outfile, Stream stream, F
 			      //           |              |/
 			      // [0][1][2][3][4][5][6][7][8][9]
 			      unsigned short timeFractional = ((dataPacket->deviceId & 0x7fff) << 1);	// use 15-bits as 16-bit fractional time
-			      // Remove the "ideal sample" offset that was estimated (for the whole part of the timestamp)
+			      // Remove the "ideal sample" offset that
+			      // was estimated (for the whole part of
+			      // the timestamp)
 			      offsetStart += (short)(((unsigned long)timeFractional * (unsigned short)(freq)) >> 16) / freq;
 			      // Now take into account the actual fractional time
 			      offsetStart = -dataPacket->timestampOffset / freq;
@@ -567,7 +607,11 @@ static char DumpFile(const char *filename, const char *outfile, Stream stream, F
 		      t0 = (double)time0 + offsetStart;												// Packet start time
 		      t1 = (double)time0 + offsetStart + (float)dataPacket->sampleCount / freq;		// Packet end time
 
-		      // Fix so packet boundary times are always the same (pushes error to last packet, would be better to distribute any error over multiple packets -- would require buffering a few packets)
+		      // Fix so packet boundary times are always the
+		      // same (pushes error to last packet, would be
+		      // better to distribute any error over multiple
+		      // packets -- would require buffering a few
+		      // packets)
 		      if (tLast != 0 && t0 - tLast < 1.0) 
 			{ 
 			  t0 = tLast;
@@ -619,7 +663,13 @@ static char DumpFile(const char *filename, const char *outfile, Stream stream, F
 				}
 			      else if (time == TIME_BLOCK || (time == TIME_TIMESTAMP && ver == 0))
 				{
-				  sprintf(timestring, "%04d-%02d-%02d %02d:%02d:%02d", 2000 + DATETIME_YEAR(dataPacket->timestamp), DATETIME_MONTH(dataPacket->timestamp), DATETIME_DAY(dataPacket->timestamp), DATETIME_HOURS(dataPacket->timestamp), DATETIME_MINUTES(dataPacket->timestamp), DATETIME_SECONDS(dataPacket->timestamp)); 
+				  sprintf(timestring, "%04d-%02d-%02d %02d:%02d:%02d",
+					  2000 + DATETIME_YEAR(dataPacket->timestamp),
+					  DATETIME_MONTH(dataPacket->timestamp),
+					  DATETIME_DAY(dataPacket->timestamp),
+					  DATETIME_HOURS(dataPacket->timestamp),
+					  DATETIME_MINUTES(dataPacket->timestamp),
+					  DATETIME_SECONDS(dataPacket->timestamp)); 
 				}
 			      else if (time == TIME_TIMESTAMP)
 				{
@@ -1043,5 +1093,5 @@ int main(int argc, char *argv[])
     CwaDelete(cwa);
   */
 
-  return 0;
+  return EXIT_SUCCESS;
 }

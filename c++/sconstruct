@@ -7,7 +7,6 @@ Row = env.Object("Row.cpp")
 SensorParameter = env.Object("SensorParameter.cpp")
 SquareMatrix = env.Object("SquareMatrix.cpp")
 
-
 env.Program(target = "bounding_box",
 	source = ["bounding_box.cpp", Row,
 	SquareMatrix, SensorParameter, util],
