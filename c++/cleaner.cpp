@@ -290,16 +290,19 @@ static auto process(const filesystem::path& infilename,
 		    cleaner::Parameters& parameters) -> void {
 
   // Check if we actually have to do anything
-  auto alwaysGenerateFile = parameters.alwaysRegenerateFile();
+  auto generateOutputFile = parameters.alwaysRegenerateFile();
 
-  if (!alwaysGenerateFile) {
-    alwaysGenerateFile = !util::exists(outFilename);    
-    cout << "\n" << progname << ": " << outFilename
-	 << " does not exist, so generating it" << endl;
+  if (!generateOutputFile) {
+    generateOutputFile = !util::exists(outFilename);
+    if (generateOutputFile) {
+      cout << "\n" << progname << ": " << outFilename
+	   << " does not exist, so generating it" << endl;
+    }
   }
 
+
   // If we have to do something...
-  if (alwaysGenerateFile) {
+  if (generateOutputFile) {
 
     auto start = chrono::steady_clock::now();
     cout << progname << ": " << infilename << " ->> " << outFilename << endl;
