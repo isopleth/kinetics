@@ -170,6 +170,5 @@ auto main(int argc, char** argv) -> int {
     process(inputFilename, seconds, force);
   }
 
-  util::allDone(cout, progname);
-  return EXIT_SUCCESS;
+  util::exitSuccess(progname);
 }

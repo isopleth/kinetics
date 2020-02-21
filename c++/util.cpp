@@ -93,14 +93,17 @@ auto util::isNumber(const string& field) -> bool {
 
 
 /**
- * Check if a CSV file has a header
+ * Check if a CSV file has a header.  The header, if present, is
+ * assumed to contain at least one field that starts with non-numeric
+ * data, and the rest of the file is assumed to contain data that
+ * always starts with numeric data
  *
  * @param filename name of CSV file to check
  * @param verbose set true to log whether header present to specified stream
  * @param stream stream to write diagnostic to
  * @return true if it has a header line at the start
  */
-auto util::csvHasHeader(const filesystem::path& filename,
+auto util::csvHasHeader(const fs::path& filename,
 			bool verbose,
 			ostream& stream) -> bool {
   auto file = ifstream{filename};
@@ -111,14 +114,18 @@ auto util::csvHasHeader(const filesystem::path& filename,
 			      istream_iterator<string>()};
     for (auto&& val : vec) {
       auto iss = istringstream{val};
-      auto d = 0.0;
-      if (iss >> d) {
+      auto number = 0.0;
+      if (iss >> number) {
+	// If we can write the stream into a numeric veriable then it
+	// was a number
 	continue;
       }
       else {
+	// Otherwise it wasn't a valid number
 	if (verbose) {
 	  stream << "Header in " << filename << " is: " << line << endl;
 	}
+	// The first row isn't a list of numbers, so it must be a header
 	return true;
       }
     }
@@ -234,12 +241,17 @@ auto util::upcase(const char* const str) -> string {
 }
 
 /**
- * Print an "all done" message
+ * Print a general "all done" message and terminate the program
  *
- * @param stream stream to print to
+ * @param success true for success, false for error
  * @param progName program name
  */
-auto util::allDone(ostream& stream, const string& progName) -> void {
-  stream << "\n" << util::repeat(20,'#') << " " << upcase(progName) << 
-    " ALL DONE FOR THIS FILE " << util::repeat(20,'#') << "\n" << endl;
+auto util::exit(bool success,
+		const string& progName) -> void {
+  auto message = success ? 
+    " ALL DONE FOR THIS FILE " :
+    " PROGRAM TERMINATING WITH AN ERROR ";
+  cout << "\n" << util::repeat(20,'#') << " " << upcase(progName) << 
+    message << util::repeat(20,'#') << "\n" << endl;
+  std::exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

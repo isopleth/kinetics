@@ -59,7 +59,7 @@ using namespace cleaner;
 namespace fs = std::filesystem;
 
 static constexpr auto DEBUG = false;
-static auto progname = "cleaner";
+static auto programName = "cleaner";
 
 /**
  * Convert axis index to axis name
@@ -287,7 +287,7 @@ static auto processLocation(Rows& rows, const filesystem::path& infilename) {
  */
 static auto process(const filesystem::path& infilename,
 		    const filesystem::path& outFilename,
-		    cleaner::Parameters& parameters) -> void {
+		    cleaner::Parameters& parameters) {
 
   // Check if we actually have to do anything
   auto generateOutputFile = parameters.alwaysRegenerateFile();
@@ -295,17 +295,16 @@ static auto process(const filesystem::path& infilename,
   if (!generateOutputFile) {
     generateOutputFile = !util::exists(outFilename);
     if (generateOutputFile) {
-      cout << "\n" << progname << ": " << outFilename
+      cout << "\n" << programName << ": " << outFilename
 	   << " does not exist, so generating it" << endl;
     }
   }
-
 
   // If we have to do something...
   if (generateOutputFile) {
 
     auto start = chrono::steady_clock::now();
-    cout << progname << ": " << infilename << " ->> " << outFilename << endl;
+    cout << programName << ": " << infilename << " ->> " << outFilename << endl;
 
     auto sstream = stringstream{};
     sstream.precision(6);
@@ -342,7 +341,7 @@ static auto process(const filesystem::path& infilename,
     
     default:
       cerr << "Didn't expect to get here" << endl;
-      exit(EXIT_FAILURE);
+      util::exitError(programName);
     }
     
     cout << "\nRead the data in\n" <<  rows.size() << " rows read\n";
@@ -381,7 +380,7 @@ static auto process(const filesystem::path& infilename,
     
     default:
       cerr << "Didn't expect to get here" << endl;
-      exit(EXIT_FAILURE);
+      util::exitError(programName);
     }
   
     // Subsample kinematic data by taking the mean of all values in a
@@ -394,12 +393,12 @@ static auto process(const filesystem::path& infilename,
       cout << inCount / seconds << " lines per second\n\n";
       cout << seconds << " seconds elapsed" << endl;
     }
-    util::allDone(cout, progname);
   }
   else {
-    cout << progname << ": " << outFilename
+    cout << programName << ": " << outFilename
 	 << " already exists, so skipping it" << endl;
   }
+  return true;
 }
 
 
@@ -424,9 +423,9 @@ static auto config() -> void {
  * Display command line usage
  */
 static auto usage() {
-  util::justify(cout, progname,
+  util::justify(cout, programName,
 		"Clean AX3 and similar CSV data files");
-  cout << progname << " [options] <infile> <outfile> [<type>]\n";
+  cout << programName << " [options] <infile> <outfile> [<type>]\n";
   cout << "\n";
   auto options = vector<Option>{};
   options.push_back(Option("-c","--cutoff", "Set cutoff frequency to specified value", true));
@@ -440,7 +439,7 @@ static auto usage() {
   cout << "   Default is ax3\n";
   cout << "\n";
   Option::show(options);
-  cout << "e.g. " << progname << " data.csv data-out.csv ax3\n";
+  cout << "e.g. " << programName << " data.csv data-out.csv ax3\n";
 }
 
 /**
@@ -450,7 +449,7 @@ auto main(int argc, char** argv) -> int {
   // Need at least input file and output file
   if (argc < 2) {
     usage();
-    return EXIT_FAILURE;
+    util::exitError(programName);
   }
 
   auto force = true;
@@ -485,12 +484,12 @@ auto main(int argc, char** argv) -> int {
 	}
 	else if (option == "--help") {
 	  usage();
-	  return EXIT_SUCCESS;
+	  util::exitSuccess(programName);
 	}
 	else {
 	  cerr << "Unrecognised long option: " << argv[index] << endl;
 	  usage();
-	  return EXIT_FAILURE;
+	  util::exitError(programName);
 	}
       }
       else {
@@ -514,7 +513,7 @@ auto main(int argc, char** argv) -> int {
 	  default:
 	    cerr << "Unrecognised option: " << argv[index] << endl;
 	    usage();
-	    return EXIT_FAILURE;
+	    util::exitError(programName);
 	  }
 	}
       }
@@ -522,14 +521,14 @@ auto main(int argc, char** argv) -> int {
     else if (nextIsSampleRate) {
       if (!util::strtonum(argv[index], sampleRate)) {	
 	cerr << "Conversion error with sample rate, " << argv[index] << endl;
-	return EXIT_FAILURE;
+	util::exitError(programName);
       }
       nextIsSampleRate = false;
     }
     else if (nextIsCutOff) {
       if (!util::strtonum(argv[index], cutoff)) {	
 	cerr << "Conversion error with cutoff, " << argv[index] << endl;
-	return EXIT_FAILURE;
+	util::exitError(programName);
       }
       nextIsCutOff = false;
     }
@@ -545,12 +544,10 @@ auto main(int argc, char** argv) -> int {
     }
     else {
       cerr << "Extra parameter provided" << endl;
-      return EXIT_FAILURE;
+      util::exitError(programName);
     } 
     index++;
   }
-  
-
   
   // Handle defaults
   if (outputFilename.empty()) {
@@ -579,14 +576,12 @@ auto main(int argc, char** argv) -> int {
   auto file = ifstream{inputFilename};
   if (!filesystem::exists(inputFilename)) {
     cerr << "file " << inputFilename << " does not exist" << endl;
-    return EXIT_FAILURE;
+    util::exitError(programName);
   }
 
-  process(filesystem::path(inputFilename),
-	  filesystem::path(outputFilename),
-	  parameters);
+  auto success = process(filesystem::path(inputFilename),
+			filesystem::path(outputFilename),
+			parameters);
 
-    
-  return EXIT_SUCCESS;
-  
+  util::exit(success, programName);
 }

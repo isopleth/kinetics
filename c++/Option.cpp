@@ -1,6 +1,5 @@
-
 /**
- * Class for handing command line option descriptions.
+ * Class for handling command line option descriptions.
  *
  * Jason Leake
  *
@@ -13,10 +12,12 @@
 using namespace std;
 
 /**
- * Show the help associated with this option
+ * Show the help associated with the options
+ *
+ * @param options vector of options
  */
-auto Option::show(const std::vector<Option>& options) -> void {
-  for (auto&& option: options) {
+auto Option::show(const vector<Option>& options) -> void {
+  for (auto&& option : options) {
     cout << option.shortoption;
     if (option.parameter) {
       cout << " <val>";
@@ -26,7 +27,7 @@ auto Option::show(const std::vector<Option>& options) -> void {
       cout << " <val>";
     }
     cout << "   " << option.description;
-    if (option.def) {
+    if (option.enabledByDefault) {
       cout << " (default)";
     }
     cout << endl;

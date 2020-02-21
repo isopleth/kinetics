@@ -49,7 +49,7 @@ using namespace std;
 auto process(const filesystem::path& infilename, bool lazy) {
 
   if (!util::exists(infilename)) {
-    return EXIT_FAILURE;
+    return false;
   }
 
   // Create output directories if they do not exist
@@ -113,7 +113,7 @@ auto process(const filesystem::path& infilename, bool lazy) {
     skipLine = false;
   }
   
-  return EXIT_SUCCESS;
+  return true;
 }
 
 /**
@@ -131,7 +131,7 @@ auto main(int argc, char** argv) -> int {
     cerr << "Usage: " << programName << " [-l] <input_file ...>\n";
     cerr << "\n";
     cerr << "-l, or --lazy means don't regenerate the file if it already exists" << endl;
-    return EXIT_FAILURE;
+    util::exitError(programName);
   }
 
   auto lazy = false;
@@ -155,10 +155,11 @@ auto main(int argc, char** argv) -> int {
 
   cout << endl;
   for (auto&& filename : filenames) {
-    process(filename, lazy);
+    auto success = process(filename, lazy);
+    if (!success) {
+      util::exitError(programName);
+    }
   }
 
-  util::allDone(cout, programName);
-
-  return EXIT_SUCCESS;
+  util::exitSuccess(programName);
 }

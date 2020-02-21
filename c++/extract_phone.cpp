@@ -176,7 +176,5 @@ auto main(int argc, char** argv) -> int {
     cout << outputFilename << " exists, so skipping it" << endl;
   }
 
-  util::allDone(cout, programName);
-  
-  return EXIT_SUCCESS;
+  util::exitSuccess(programName);
 }

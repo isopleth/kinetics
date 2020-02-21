@@ -48,6 +48,8 @@ using namespace std;
 namespace c = std::chrono;
 namespace fs = std::filesystem;
 
+const constexpr auto programName = "bounding_box";
+
 // Contents of bounding box definition file
 struct BoundingBox {
   double minLat;
@@ -104,7 +106,7 @@ BoundingBox::BoundingBox(const string& filename) {
   }
   if (foundMask != 15) {
     cerr << "Not all fields specified" << endl;
-    exit(EXIT_FAILURE);
+    util::exit(EXIT_FAILURE, programName);
   }
   if (minLon > maxLon) {
     swap(minLon, maxLon);
@@ -113,8 +115,6 @@ BoundingBox::BoundingBox(const string& filename) {
     swap(minLat, maxLat);
   }
 }
-
-const constexpr auto programName = "bounding_box";
 
 /**
  * Main processing method.  Processes a single input file and produces
@@ -179,7 +179,7 @@ auto process(const string& infilename,
     cout << inCount / seconds << " lines per second\n\n";
     cout << seconds << " seconds elapsed" << endl;
   }
-  util::allDone(cout, programName);
+  util::exitSuccess(programName);
 }
 
 
@@ -241,7 +241,7 @@ auto main(int argc, char** argv) -> int {
   
   if (argc != 3) {
     cerr << "Usage: " << programName << " <input file> <output file> <location file>" << endl;
-    return EXIT_FAILURE;
+    util::exit(EXIT_FAILURE, programName);
   }
 
   auto force = true;
@@ -266,7 +266,7 @@ auto main(int argc, char** argv) -> int {
     case 'h':
     case '?':
       usage();
-      return EXIT_SUCCESS;
+      util::exitSuccess(programName);
       
     case 'l':
       force = false;
@@ -291,7 +291,7 @@ auto main(int argc, char** argv) -> int {
     else {
       cerr << "Too many command line arguments" << endl;
       usage();
-      return EXIT_FAILURE;
+      util::exitError(programName);
     }
   }
 
@@ -299,7 +299,7 @@ auto main(int argc, char** argv) -> int {
 
   if (!fs::exists(locationFilename)) {
     cerr << programName << ": " << locationFilename << " does not exist";
-    return EXIT_FAILURE;
+    util::exitError(programName);
   }
 
   auto box = BoundingBox{locationFilename};
@@ -313,5 +313,5 @@ auto main(int argc, char** argv) -> int {
   if (force) {
     process(inFilename, outFilename, box);
   }
-  return EXIT_SUCCESS;
+  util::exitSuccess(programName);
 }

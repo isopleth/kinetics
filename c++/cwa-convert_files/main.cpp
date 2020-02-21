@@ -4,8 +4,8 @@
 // Modified by Jason Leake, 2020:
 // - Don't use / to mark start of option on Linux
 // - Convert to C++
+// - Remove SQLite support
 //
-// SQLite support added by Stefan Diewald <stefan.diewald@mytum.de>
 
 
 #ifdef _WIN32
@@ -14,8 +14,6 @@
 #define strcasecmp _stricmp
 #define timegm _mkgmtime
 #endif
-
-//#define SQLITE
 
 #include <cstdio>
 #include <cstdlib>
@@ -29,17 +27,11 @@
 #endif
 
 #include "cwa.h"
-#ifdef SQLITE
-#include "sqlite3.h"
-#endif
 
 typedef enum { STREAM_ACCELEROMETER, STREAM_GYRO } Stream;
 typedef enum 
   { 
    FORMAT_DEFAULT, FORMAT_CSV, FORMAT_RAW, FORMAT_WAV
-#ifdef SQLITE
-   , FORMAT_SQLITE
-#endif
   } Format;
 typedef enum { VALUES_DEFAULT, VALUES_INT, VALUES_FLOAT } Values;
 typedef enum { TIME_DEFAULT,
@@ -205,12 +197,6 @@ static char DumpFile(const char *filename,
 
   FILE *fp;
   FILE *ofp;
-#ifdef SQLITE
-  sqlite3 *dbconn = NULL;
-  sqlite3_stmt *stmt;
-  char sql[256];
-  char sql_prepare[256];
-#endif
 
   // Process any default parameters
   if (format == FORMAT_DEFAULT)
@@ -227,12 +213,6 @@ static char DumpFile(const char *filename,
       time = TIME_NONE;
       if (format == FORMAT_CSV) { time = TIME_TIMESTAMP; }
     }
-#ifdef SQLITE
-  if (format == FORMAT_SQLITE)
-    {
-      values = VALUES_INT;
-    }
-#endif
 
   if (amplify != 1.0f && format != FORMAT_WAV && format != FORMAT_RAW)
     {
@@ -249,53 +229,11 @@ static char DumpFile(const char *filename,
         {
 	  ofp = fopen(outfile, "w");
         }
-#ifdef SQLITE
-      else if (format == FORMAT_SQLITE)
-        {
-	  sqlite3_open(outfile, &dbconn);
-	  strcpy(sql, "CREATE TABLE acc (time INTEGER, x INTEGER, y INTEGER, z INTEGER");
-	  strcpy(sql_prepare, "INSERT INTO acc VALUES (?, ?, ?, ?");
-	  if (options & OPTIONS_LIGHT)
-	    {
-	      strcat(sql, ", light INTEGER");
-	      strcat(sql_prepare, ", ?");
-	    }
-	  if (options & OPTIONS_TEMP)
-	    {
-	      strcat(sql, ", temperature INTEGER");
-	      strcat(sql_prepare, ", ?");
-	    }
-	  if (options & OPTIONS_BATT) 
-	    { 
-	      strcat(sql, ", battery INTEGER");
-	      strcat(sql_prepare, ", ?");
-	    }
-	  strcat(sql, ");");
-	  strcat(sql_prepare, ");");
-	  sqlite3_exec(dbconn, "DROP TABLE acc;", 0, 0, 0);
-	  sqlite3_exec(dbconn, sql, 0, 0, 0);
-	  sqlite3_exec(dbconn, "CREATE INDEX time_hash ON acc (time);", 0, 0, 0);
-	  if (sqlite3_prepare_v2(dbconn, sql_prepare, -1, &stmt, NULL) != SQLITE_OK) {
-	    printf("\nCould not prepare statement.\n");
-	    printf("%s\n", sql_prepare);
-	    return -1;
-	  }
-	  sqlite3_exec(dbconn, "BEGIN;", 0, 0, 0);
-	  ofp = (FILE *)-1;
-        }
-#endif
       else
         {
 	  ofp = fopen(outfile, "wb");
         }
     }
-#ifdef SQLITE
-  else if (format == FORMAT_SQLITE)
-    {
-      fprintf(stderr, "ERROR: No filename given. Necessary for SQLite.\n");
-      return -1;
-    }
-#endif
     
   if (ofp == NULL) { ofp = stdout; }
 
@@ -352,9 +290,6 @@ static char DumpFile(const char *filename,
 		   (header == HEADER_GYRO && stream == STREAM_GYRO))
             {
 	      int i, z; // , requiredFloatBufferSize;
-#ifdef SQLITE
-	      int j;
-#endif
 	      DataPacket *dataPacket;
 	      char ver;
 	      unsigned short sum;
@@ -513,10 +448,18 @@ static char DumpFile(const char *filename,
 				    {
 				      if (format == FORMAT_RAW)
 					{
-					  if (accelAxis >= 0 && z >= accelAxis && z < accelAxis + 3) { divide = (float)accelScale; }
-					  else if (gyroAxis >= 0 && z >= gyroAxis && z < gyroAxis + 3) { divide = 32768.0f / (float)gyroScale; }
-					  else if (magAxis >= 0 && z >= magAxis && z < magAxis + 3) { divide = (float)magScale; }
-					  else { divide = 1.0f; }
+					  if (accelAxis >= 0 && z >= accelAxis && z < accelAxis + 3) {
+					    divide = (float)accelScale;
+					  }
+					  else if (gyroAxis >= 0 && z >= gyroAxis && z < gyroAxis + 3) {
+					    divide = 32768.0f / (float)gyroScale;
+					  }
+					  else if (magAxis >= 0 && z >= magAxis && z < magAxis + 3) {
+					    divide = (float)magScale;
+					  }
+					  else {
+					    divide = 1.0f;
+					  }
 					}
 				      floatBuffer[numAxes * i + z] = amplify * (float)data[numAxes * i + z] / divide;
 				    }
@@ -639,12 +582,16 @@ static char DumpFile(const char *filename,
 			      auto mz = short{};
 
 			      if (time == TIME_SEQUENCE) { sprintf(timestring, "%u", (unsigned int)sequence); }
-			      else if (time == TIME_SECONDS && ver == 0) { sprintf(timestring, "%0.2f", (double)sequence / freq); }
+			      else if (time == TIME_SECONDS && ver == 0) {
+				sprintf(timestring, "%0.2f", (double)sequence / freq);
+			      }
 			      else if (time == TIME_SECONDS)
 				{
 				  sprintf(timestring, "%0.4f", t - tStart);
 				}
-			      else if (time == TIME_DAYS && ver == 0) { sprintf(timestring, "%0.11f", (double)sequence / freq / 86400.0); }
+			      else if (time == TIME_DAYS && ver == 0) {
+				sprintf(timestring, "%0.11f", (double)sequence / freq / 86400.0);
+			      }
 			      else if (time == TIME_DAYS)
 				{
 				  sprintf(timestring, "%0.12f", (t - tStart) / 86400.0);
@@ -676,7 +623,14 @@ static char DumpFile(const char *filename,
 				  time_t tn = (time_t)t;
 				  struct tm *tmn = gmtime(&tn);
 				  float sec = tmn->tm_sec + (float)(t - (time_t)t);
-				  sprintf(timestring, "%04d-%02d-%02d %02d:%02d:%02d.%03d", 1900 + tmn->tm_year, tmn->tm_mon + 1, tmn->tm_mday, tmn->tm_hour, tmn->tm_min, (int)sec, (int)((sec - (int)sec) * 1000));
+				  sprintf(timestring, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+					  1900 + tmn->tm_year,
+					  tmn->tm_mon + 1,
+					  tmn->tm_mday,
+					  tmn->tm_hour,
+					  tmn->tm_min,
+					  (int)sec,
+					  (int)((sec - (int)sec) * 1000));
 				}
 			      else // if (time == TIME_NONE)
 				{
@@ -733,49 +687,6 @@ static char DumpFile(const char *filename,
 				  else { mx = my = mz = 0; }
 				}
 
-#ifdef SQLITE
-			      if (values == VALUES_INT && format == FORMAT_SQLITE)
-                                {
-				  if (sqlite3_bind_double(stmt, 1, (double)(t - 3600.0))) {
-				    fprintf(stderr, "ERROR: sqlite bind double (time).\n");
-				  }
-				  if (sqlite3_bind_int(stmt, 2, x)) {
-				    fprintf(stderr, "ERROR: sqlite bind int (x).\n");
-				  }
-				  if (sqlite3_bind_int(stmt, 3, y)) {
-				    fprintf(stderr, "ERROR: sqlite bind int (y).\n");
-				  }
-				  if (sqlite3_bind_int(stmt, 4, z)) {
-				    fprintf(stderr, "ERROR: sqlite bind int (z).\n");
-				  }
-                                        
-				  j = 5;
-				  if (options & OPTIONS_LIGHT)
-				    {
-				      if (sqlite3_bind_int(stmt, j, light))
-					{
-					  fprintf(stderr, "ERROR: sqlite bind int (light).\n");
-					}
-				      j++;
-				    }
-				  if (options & OPTIONS_TEMP)
-				    {
-				      if (sqlite3_bind_double(stmt, j, (double)(dataPacket->temperature * 19.0 / 64.0 - 50.0)))
-					{
-					  fprintf(stderr, "ERROR: sqlite bind double (temperature).\n");
-					}
-				      j++;
-				    }
-				  if (options & OPTIONS_BATT) 
-				    { 
-				      if (sqlite3_bind_double(stmt, j, (double)(dataPacket->battery / divide * 6.0)))
-					{
-					  fprintf(stderr, "ERROR: sqlite bind double (battery).\n");
-					}
-				    }
-                                }                                        
-			      else
-#endif
 				{
 				  // Time
 				  if (time != TIME_NONE)
@@ -793,7 +704,12 @@ static char DumpFile(const char *filename,
 					}
 				      else
 					{
-					  outputSize += fprintf(ofp, "%s%f,%f,%f", commaNeeded ? "," : "", (float)x / accelScale, (float)y / accelScale, (float)z / accelScale);
+					  outputSize += fprintf(ofp,
+								"%s%f,%f,%f",
+								commaNeeded ? "," : "",
+								(float)x / accelScale,
+								(float)y / accelScale,
+								(float)z / accelScale);
 					}
 				      commaNeeded = true;
 				    }
@@ -822,27 +738,23 @@ static char DumpFile(const char *filename,
 					}
 				      else
 					{
-					  outputSize += fprintf(ofp, "%s%f,%f,%f", commaNeeded ? "," : "", (float)mx / magScale, (float)my / magScale, (float)mz / magScale);
+					  outputSize += fprintf(ofp, "%s%f,%f,%f",
+								commaNeeded ? "," : "",
+								(float)mx / magScale,
+								(float)my / magScale,
+								(float)mz / magScale);
 					}
 				      commaNeeded = true;
 				    }
 				}
 
-#ifdef SQLITE
-			      if (format == FORMAT_SQLITE)
                                 {
-				  if (sqlite3_step(stmt) != SQLITE_DONE)
-                                    {
-				      fprintf(stderr, "ERROR: Could not step (execute) SQL stmt: %s\n", sqlite3_errmsg(dbconn));
-				      return 1;
-                                    }
-				  sqlite3_reset(stmt);
-                                }
-			      else
-#endif
-                                {
-				  if (options & OPTIONS_LIGHT)  { fprintf(ofp, ",%u", light); }
-				  if (options & OPTIONS_TEMP)   { fprintf(ofp, ",%u", dataPacket->temperature); }
+				  if (options & OPTIONS_LIGHT)  {
+				    fprintf(ofp, ",%u", light);
+				  }
+				  if (options & OPTIONS_TEMP)   {
+				    fprintf(ofp, ",%u", dataPacket->temperature);
+				  }
 				  if (options & OPTIONS_BATT)
                                     {
 				      fprintf(ofp, ",%u", dataPacket->battery);
@@ -905,16 +817,6 @@ static char DumpFile(const char *filename,
 
   if (ofp != stdout)
     { 
-#ifdef SQLITE
-      if (format == FORMAT_SQLITE)
-        {
-	  sqlite3_exec(dbconn, "DELETE FROM acc WHERE time < 0", 0, 0, 0);
-	  sqlite3_exec(dbconn, "COMMIT;", 0, 0, 0);
-	  sqlite3_exec(dbconn, "END;", 0, 0, 0);
-	  sqlite3_close(dbconn);
-        }
-      else
-#endif
 	fclose(ofp); 
     }
   fprintf(stderr, "\r\nWrote %u bytes of data (%u samples).\r\n", (unsigned int)outputSize, (unsigned int)totalSamples);
@@ -968,9 +870,6 @@ int main(int argc, char *argv[])
 	  else if (strcasecmp(argv[i], "-f:csv") == 0 || strcasecmp(argv[i], "-csv") == 0) { format = FORMAT_CSV; }
 	  else if (strcasecmp(argv[i], "-f:raw") == 0 || strcasecmp(argv[i], "-raw") == 0) { format = FORMAT_RAW; }
 	  else if (strcasecmp(argv[i], "-f:wav") == 0 || strcasecmp(argv[i], "-wav") == 0) { format = FORMAT_WAV; }
-#ifdef SQLITE
-	  else if (strcasecmp(argv[i], "-f:sqlite") == 0 || strcasecmp(argv[i], "-sqlite") == 0) { format = FORMAT_SQLITE; }
-#endif
 	  else if (strcasecmp(argv[i], "-v:int") == 0)       { values = VALUES_INT; }
 	  else if (strcasecmp(argv[i], "-v:float") == 0)     { values = VALUES_FLOAT; }
 	  else if (strcasecmp(argv[i], "-t:none") == 0)      { time = TIME_NONE; }
@@ -1050,9 +949,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "CWA-Convert by Daniel Jackson, 2010-2012\n");
       fprintf(stderr, "Modified by Jason Leake, 2020\n");
       fprintf(stderr, "Usage: CWA <filename.cwa> [-s:accel|-s:gyro] [-f:csv|-f:raw|-f:wav"
-#ifdef SQLITE
-	      "|-f:sqlite"
-#endif
+
 	      "] [-v:float|-v:int] [-t:timestamp|-t:none|-t:sequence|-t:secs|-t:days|-t:serial|-t:excel|-t:matlab|-t:block] [-no<data|accel|gyro|mag>] [-light] [-temp] [-batt[v|p|r]] [-events] [-amplify 1.0] [-start 0] [-length <len>] [-step 1] [-out <outfile>] [-blockstart 0] [-blockcount <count>]\n");
       return 1;
     }

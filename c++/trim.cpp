@@ -44,7 +44,6 @@
 #include <libfccp/csv.h>
 
 using namespace std;
-namespace fs = std::filesystem;
 
 static constexpr auto DEBUG = false;
 static constexpr auto programName = "trim";
@@ -94,7 +93,7 @@ auto process(const filesystem::path& inputFilename,
     cout << programName << ": " << outputFilename
 	 << " already exists, so skipping it" << endl;
   }
-  util::allDone(cout, programName);
+  util::exitSuccess(programName);
 }
 
 /**
@@ -116,7 +115,7 @@ auto main(int argc, char** argv) -> int {
   // Need at least input file and output file
   if (argc < 3) {
     usage();
-    return EXIT_FAILURE;
+    util::exitError(programName);
   }
 
   auto force = true;
@@ -140,7 +139,7 @@ auto main(int argc, char** argv) -> int {
       else {
 	cerr << "Unrecognised option: " << argv[index] << endl;
 	usage();
-	return EXIT_FAILURE;
+	util::exitError(programName);
       }
     }
     else if (inputFilename.empty()) {
@@ -149,7 +148,7 @@ auto main(int argc, char** argv) -> int {
     else if (!columnDefined) {
       if (!util::strtonum(argv[index], column)) {
 	cerr << "Conversion error with column number, " << argv[index] << endl;
-	return EXIT_FAILURE;
+	util::exitError(programName);
       }
       columnDefined = true;
     }
@@ -157,14 +156,14 @@ auto main(int argc, char** argv) -> int {
     else if (!thresholdDefined) {
       if (!util::strtonum(argv[index], threshold)) {
 	cerr << "Conversion error with threshold, " << argv[index] << endl;
-	return EXIT_FAILURE;
+	util::exitError(programName);
       }
       thresholdDefined = true;
     }
     else if (!periodDefined) {
       if (!util::strtonum(argv[index], period)) {
 	cerr << "Conversion error with period, " << argv[index] << endl;
-	return EXIT_FAILURE;
+	util::exitError(programName);
       }
       periodDefined = true;
     }
@@ -173,7 +172,7 @@ auto main(int argc, char** argv) -> int {
     }
     else {
       cerr << "Extra parameter provided" << endl;
-      return EXIT_FAILURE;
+      util::exitError(programName);
     }
     index++;
   }
@@ -181,14 +180,14 @@ auto main(int argc, char** argv) -> int {
   
   // Handle defaults
   if (outputFilename.empty()) {
-    auto filename = fs::path{inputFilename};
+    auto filename = filesystem::path{inputFilename};
     filename.replace_filename(filename.stem().string() + "_trim"
 			      + filename.extension().string());
     outputFilename = filename.string();
   }
   
   
-  cout << "trim " << inputFilename  << " " << column <<
+  cout << programName << " " << inputFilename  << " " << column <<
     " " << threshold << " " <<
     period << " " << outputFilename << endl;
   
@@ -197,7 +196,7 @@ auto main(int argc, char** argv) -> int {
   auto file = ifstream{inputFilename};
   if (!filesystem::exists(inputFilename)) {
     cerr << "file " << inputFilename << " does not exist" << endl;
-    return EXIT_FAILURE;
+    util::exitError(programName);
   }
   
   process(filesystem::path(inputFilename),
@@ -207,7 +206,6 @@ auto main(int argc, char** argv) -> int {
 	  period,
 	  force);
 
-  util::allDone(cout, programName);
-  return EXIT_SUCCESS;
+  util::exitSuccess(programName);
   
 }

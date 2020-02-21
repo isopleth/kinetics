@@ -38,6 +38,9 @@ SensorParameter::SensorParameter(SensorParameter::SensorType type) : type(type) 
   generateMapping();
 }
 
+/**
+ * Generate the static lookup map between the sensor name and its enumeration.
+ */
 auto SensorParameter::generateMapping() -> void { 
   // Lazy generation of mapping between typeString and data types enum
   if (mapping.size() == 0) {
@@ -87,5 +90,5 @@ auto SensorParameter::isAcceleration() const -> bool {
     type == SensorType::PHONE_ACCELEROMETER;
 }
 
-
+// Static mapping used to convert sensor name to sensor enumeration
 map<string, SensorParameter::SensorType> SensorParameter::mapping;

@@ -66,8 +66,18 @@ namespace util {
 
   auto preprocessLine(const std::string& str) -> std::string;
 
-  auto allDone(std::ostream& stream, const std::string& progname) -> void;
+  auto exit(bool success,
+	    const std::string& progname) -> void;
+
+  inline auto exitSuccess(const std::string& progname) {
+    exit(true, progname);
+  }
+
+  inline auto exitError(const std::string& progname) {
+    exit(false, progname);
+  }
   
+
   // File handling
   
   auto csvHasHeader(const std::filesystem::path& filename,
