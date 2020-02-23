@@ -30,6 +30,10 @@
 # Descriptive statistics for accelerometer file
 #
 
+# Axes:
+# X is the long axss
+# Y is the across-the-device axis
+# Z is the across-the-device axis
 import numpy as np
 import argparse
 import sys
@@ -52,7 +56,9 @@ class Processor:
                 else:
                     count += 1
                 line = self.fh.readline().strip()
-            
+
+        self.timestamp = np.array(['abba' for _ in range(count)])
+        self.epoch = np.zeros((count,))
         self.x = np.zeros((count,))
         self.y = np.zeros((count,))
         self.z = np.zeros((count,))
@@ -66,6 +72,9 @@ class Processor:
                 if row.skip:
                     pass
                 else:
+                    self.timestamp = self.timestamp
+                    self.epoch = row.getEpoch()
+
                     self.x[index] = row.val[0]
                     self.y[index] = row.val[1]
                     self.z[index] = row.val[2]
@@ -73,7 +82,21 @@ class Processor:
                     index += 1
                 line = self.fh.readline().strip()
 
+    def  subtractMeans(self):
+        meanx = self.x.mean()
+        meany = self.y.mean()
+        meanz = self.z.mean()
+        meant = self.tot.mean()
+        for index in range(0, self.x.size):
+            
+            self.x[index] = self.x[index] - meanx
+            self.y[index] = self.y[index] - meany
+            self.z[index] = self.z[index] - meanz
+            self.tot[index] = self.tot[index] - meant
+                
+                
 def descriptive(type, array):
+    """ Summarise array"""
     while len(type) < 6:
         type = type + " "
     print(f"{type} -- n={array.size}, min={array.min():.2f}, max={array.max():.2f}, mean={array.mean():.2f}, std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
@@ -93,12 +116,21 @@ def main():
 
     processor = Processor()
     processor.process(filePath)
+    print("---descriptive stats---")
     descriptive("x", processor.x);
     descriptive("y", processor.y);
     descriptive("z", processor.z);
     descriptive("total", processor.tot);
-    
+    print()
+    print("---Subtract mean from each value to baseline---")
+    processor.subtractMeans()
+    descriptive("x", processor.x);
+    descriptive("y", processor.y);
+    descriptive("z", processor.z);
+    descriptive("total", processor.tot);
 
+
+    
 if __name__ == "__main__":
     main()
   

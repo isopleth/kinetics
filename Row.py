@@ -2,6 +2,7 @@ import array
 from decimal import Decimal
 import sys
 from math import sqrt
+import time
 
 class Row:
     """ Represents a row from the input file
