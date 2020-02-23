@@ -57,3 +57,5 @@ env.Default(env.Command("../day_splitter", "day_splitter", "cp day_splitter ../"
 env.Default(env.Command("../extract_phone", "extract_phone", "cp extract_phone ../"))
 env.Default(env.Command("../split_times", "split_times", "cp split_times ../"))
 env.Default(env.Command("../trim", "trim", "cp trim ../"))
+
+env.Clean("","*~")
