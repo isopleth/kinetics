@@ -39,10 +39,11 @@ import argparse
 import sys
 from tkinter import filedialog
 import tkinter as tk
+import csv
 
 from Row import Row
 
-class Processor:
+class StatsProcessor:
         
     def process(self, filename):
         # Count number of lines in file to get array dimension
@@ -155,10 +156,10 @@ class Minutes:
                       f" {self.y[min].mean():.3f}, {rmsy:.3f}, {self.y[min].std():.3f}," +
                       f" {self.y[min].mean():.3f}, {rmsz:.3f}, {self.z[min].std():.3f}" +
                       f" {self.tot[min].mean():.3f}, {rmstot:.3f}, {self.tot[min].std():.3f}")
-                writer.writerow(min, self.x[min].size, self.x[min].mean(), rmsx,
+                writer.writerow([min, self.x[min].size, self.x[min].mean(), rmsx,
                                 self.x[min].std(), self.y[min].mean(), rmsy, self.y[min].std(),
                                 self.y[min].mean(), rmsz, self.z[min].std(),
-                                self.tot[min].mean(), rmstot, self.tot[min].std())
+                                 self.tot[min].mean(), rmstot, self.tot[min].std()])
             
     def toMinute(self, second):
         """ Convert epoch seconds to minutes """
@@ -170,7 +171,8 @@ def descriptive(type, array):
     while len(type) < 6:
         type = type + " "
     print(f"{type} -- n={array.size}, min={array.min():.2f}, "+
-          "max={array.max():.2f}, mean={array.mean():.2f}, std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
+          f"max={array.max():.2f}, mean={array.mean():.2f}, "+
+          f"std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
                 
 def main():
     if len(sys.argv) < 2:
@@ -185,7 +187,7 @@ def main():
         args = parser.parse_args()
         filePath = args.filename
 
-    processor = Processor()
+    processor = StatsProcessor()
     processor.process(filePath)
     print("---descriptive stats---")
     descriptive("x", processor.x);
