@@ -8,7 +8,7 @@ class Row:
     """ Represents a row from the input file
     """
     
-    def __init__(self, line):
+    def __init__(self, line, verbose=True):
         """ Initializer
         """
         # True if this row is to be skipped because it contains a syntax
@@ -26,7 +26,8 @@ class Row:
             return
 
         if fields[0] == "datetime":
-            print(f"Skip header line {line}", file=sys.stderr)
+            if verbose:
+                print(f"Skip header line {line}", file=sys.stderr)
             self.skip = True
             return
             

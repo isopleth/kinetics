@@ -64,6 +64,7 @@ class StatsProcessor:
         self.y = np.zeros((count,))
         self.z = np.zeros((count,))
         self.tot = np.zeros((count,))
+        rowAbove8 = [0,0,0]
 
         with open(filename, "r") as self.fh:
             line = self.fh.readline().strip()
@@ -81,15 +82,34 @@ class StatsProcessor:
                     self.z[index] = row.val[2]
                     self.tot[index] = row.getTotAcc()
                     index += 1
+
+                    for iindex in range(len(row.val)):
+                        if abs(row.val[iindex]) > 8:
+                            rowAbove8[iindex] = rowAbove8[iindex] + 1
                 line = self.fh.readline().strip()
 
+        for iindex in range(len(row.val)):
+            # size of x is the same as y and z
+            proportion = rowAbove8[iindex]/self.x.size
+            
+            print(f"axis {iindex}, exceeded +/-8 {rowAbove8[iindex]} times")
+                
+        f = open("acceleromter.csv", "w")
+        with f:
+            writer = csv.writer(f)
+            for index in range(self.epoch.size):
+                writer.writerow([self.epoch[index], self.x[index],
+                                 self.y[index], self.z[index],
+                                 self.tot[index]])
+
+
+                
     def  subtractMeans(self):
         meanx = self.x.mean()
         meany = self.y.mean()
         meanz = self.z.mean()
         meant = self.tot.mean()
         for index in range(0, self.x.size):
-            
             self.x[index] = self.x[index] - meanx
             self.y[index] = self.y[index] - meany
             self.z[index] = self.z[index] - meanz
@@ -142,24 +162,71 @@ class Minutes:
 
         print(np.count_nonzero(self.check != 1))
 
-        print("minute, size, xmean, xrms, xstd, ymean, yrms, ystd, zmean, zrms, zstd, totmean, totrms, totstd")  
-        f = open("numbers.csv", "w")
+
+        f = open("minutes.csv", "w")
         with f:
+            print("Minute,"+
+                  "size,"+
+                  "x mean,"+
+                  "x rms,"+
+                  "x peak to peak,"+
+                  "x std dev,"+
+                  "y mean,"+
+                  "y rms,"+
+                  "y peak to peak,"+
+                  "y std dev,"+
+                  "z mean,"+
+                  "z rms,"+
+                  "z peak to peak,"+
+                  "z std dev,"+
+                  "tot mean,"+
+                  "tot rms,"+
+                  "tot peak to peak,"+
+                  "tot std dev")
+
             writer = csv.writer(f)
             for min in range(0, self.interval):
                 rmsx = np.sqrt(np.mean(np.square(self.x[min])))
                 rmsy = np.sqrt(np.mean(np.square(self.y[min])))
                 rmsz = np.sqrt(np.mean(np.square(self.z[min])))
                 rmstot = np.sqrt(np.mean(np.square(self.tot[min])))
-                print(f"{min}, {self.x[min].size}, {self.x[min].mean():.3f}, {rmsx:.3f}," +
+                      
+                print(f"{min}, {self.x[min].size}," +
+                      f" {self.x[min].mean():.3f}," +
+                      f" {self.x[min].ptp():.3f}," +
+                      f" {rmsx:.3f}," +
                       f" {self.x[min].std():.3f}," +
-                      f" {self.y[min].mean():.3f}, {rmsy:.3f}, {self.y[min].std():.3f}," +
-                      f" {self.y[min].mean():.3f}, {rmsz:.3f}, {self.z[min].std():.3f}" +
-                      f" {self.tot[min].mean():.3f}, {rmstot:.3f}, {self.tot[min].std():.3f}")
-                writer.writerow([min, self.x[min].size, self.x[min].mean(), rmsx,
-                                self.x[min].std(), self.y[min].mean(), rmsy, self.y[min].std(),
-                                self.y[min].mean(), rmsz, self.z[min].std(),
-                                 self.tot[min].mean(), rmstot, self.tot[min].std()])
+                      f" {self.y[min].mean():.3f}," +
+                      f" {self.y[min].ptp():.3f}," +
+                      f" {rmsy:.3f}," +
+                      f" {self.y[min].std():.3f}," +
+                      f" {self.y[min].mean():.3f}," +
+                      f" {self.y[min].ptp():.3f}," +
+                      f"{rmsz:.3f}," +
+                      f"{self.z[min].std():.3f}," +
+                      f" {self.tot[min].mean():.3f}," +
+                      f" {self.tot[min].ptp():.3f}," +
+                      f" {rmstot:.3f}," +
+                      f"{self.tot[min].std():.3f}," +
+                      f" {rmsx:.3f}")
+                writer.writerow([min,
+                                 self.x[min].size,
+                                 self.x[min].mean(),
+                                 self.x[min].ptp(),
+                                 rmsx,
+                                 self.x[min].std(),
+                                 self.y[min].mean(),
+                                 self.y[min].ptp(),
+                                 rmsy,
+                                 self.y[min].std(),
+                                 self.z[min].mean(),
+                                 self.z[min].ptp(),
+                                 rmsz,
+                                 self.z[min].std(),
+                                 self.tot[min].mean(),
+                                 self.tot[min].ptp(),
+                                 rmstot,
+                                 self.tot[min].std()])
             
     def toMinute(self, second):
         """ Convert epoch seconds to minutes """
