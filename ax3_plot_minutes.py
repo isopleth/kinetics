@@ -78,12 +78,11 @@ class Processor:
             plt.show()
 
         # For the full dataset
-        for index in range(2, 13):
+        for index in range(2, len(title)):
             plt.title(title[index])
             plt.axvline(4,c="red")
             plt.axvline(12,c="red")
             plt.axvline(20,c="red")
-
             plt.xlabel("minute")
             plt.plot(data[:, [index]])
             plt.show()
