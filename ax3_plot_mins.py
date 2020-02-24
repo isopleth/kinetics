@@ -50,19 +50,19 @@ class Processor:
         title = [ "minute", "size",
                   "mean of x values over minute",
                   "ptp of x values over minute",
-                  "rms of x values over mimute",
+                  "rms of x values over minute",
                   "std dev of x values over minute",
                   "mean of y values over minute",
                   "ptp of y values over minute",
-                  "rms of y values over mimute",
+                  "rms of y values over minute",
                   "std dev of y values over minute",
                   "mean of z values over minute",
                   "ptp of z values over minute",
-                  "rms of z values over mimute",
+                  "rms of z values over minute",
                   "std dev of z values over minute",
                   "mean of tot values over minute",
                   "ptp of tot values over minute",
-                  "rms of tot values over mimute",
+                  "rms of tot values over minute",
                   "std dev of tot values over minute"]
 
                   
