@@ -194,7 +194,7 @@ class OutputRow:
         return float(repr(number)[:fractionalPart + digits + 1])
     
 class Averager:
-    """ This class is the main course of the program.  It processes the
+    """ This class is the main class of the program.  It processes the
     input file and produces the list of rows to be written to the output
     file"""
     def __init__(self, filename,

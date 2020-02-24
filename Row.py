@@ -53,7 +53,6 @@ class Row:
         # Lazy evaluation
         if self._epoch is None:
             timestring, dot, milliseconds = self.timestamp.partition('.')
-
             dateObject = time.strptime(timestring, "%Y-%m-%d %H:%M:%S")
             self._epoch = time.mktime(dateObject) + int(milliseconds) / 1000
         return self._epoch
