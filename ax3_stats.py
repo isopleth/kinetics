@@ -65,6 +65,9 @@ class StatsProcessor:
         self.z = np.zeros((count,))
         self.tot = np.zeros((count,))
         rowAbove8 = [0,0,0]
+        rowAbove7 = [0,0,0]
+        rowAbove6 = [0,0,0]
+        rowAbove1 = [0,0,0]
 
         with open(filename, "r") as self.fh:
             line = self.fh.readline().strip()
@@ -84,17 +87,25 @@ class StatsProcessor:
                     index += 1
 
                     for iindex in range(len(row.val)):
-                        if abs(row.val[iindex]) > 8:
+                        if abs(row.val[iindex]) >= 8:
                             rowAbove8[iindex] = rowAbove8[iindex] + 1
+                        if abs(row.val[iindex]) >= 7:
+                            rowAbove7[iindex] = rowAbove7[iindex] + 1
+                        if abs(row.val[iindex]) >= 6:
+                            rowAbove6[iindex] = rowAbove6[iindex] + 1
+                        if abs(row.val[iindex]) >= 1:
+                            rowAbove1[iindex] = rowAbove1[iindex] + 1
                 line = self.fh.readline().strip()
 
         for iindex in range(len(row.val)):
             # size of x is the same as y and z
-            proportion = rowAbove8[iindex]/self.x.size
-            
-            print(f"axis {iindex}, exceeded +/-8 {rowAbove8[iindex]} times")
+            proportion = rowAbove8[iindex]/self.x.size            
+            print(f"axis {iindex}, +/-8 or more {rowAbove8[iindex]} times")
+            print(f"axis {iindex}, +/-7 or more {rowAbove7[iindex]} times")
+            print(f"axis {iindex}, +/-6 or more {rowAbove6[iindex]} times")
+            print(f"axis {iindex}, +/-1 or more {rowAbove1[iindex]} times")
                 
-        f = open("acceleromter.csv", "w")
+        f = open("accelerometer.csv", "w")
         with f:
             writer = csv.writer(f)
             for index in range(self.epoch.size):
@@ -143,14 +154,14 @@ class Minutes:
             self.size[min] = self.size[min] + 1
 
         # Now create the numpy arrays for each minute with the correct size
-        for min in range(0, self.interval):
+        for min in range(self.interval):
             self.x.append(np.zeros((int(self.size[min]),)))
             self.y.append(np.zeros((int(self.size[min]),)))
             self.z.append(np.zeros((int(self.size[min]),)))
             self.tot.append(np.zeros((int(self.size[min]),)))
             self.check.append(np.zeros((int(self.size[min]),)))
-            
-        for index in range(0, processor.x.size):            
+
+        for index in range(processor.x.size):            
             min = self.toMinute(processor.epoch[index]) - self.startMinute
             rowIndex = int(self.currentIndex[min])
             self.x[min][rowIndex] = processor.x[index]
@@ -160,11 +171,19 @@ class Minutes:
             self.check[min][rowIndex] = 1
             self.currentIndex[min] = rowIndex + 1
 
-        print(np.count_nonzero(self.check != 1))
-
+        print()
+        print(f"Points per minute are {self.currentIndex-1}")
+        
+        # This is a sanity check to make sure that all values in
+        # all minutes are filled in.  It should not output anything
+        for min in range(self.interval):
+            for index in range(len(self.check[min])):
+                if self.check[min][index] != 1:
+                    print(f"Check index {index} at minute {min}!!!")
 
         f = open("minutes.csv", "w")
         with f:
+            print()
             print("Minute,"+
                   "size,"+
                   "x mean,"+
@@ -191,24 +210,24 @@ class Minutes:
                 rmsz = np.sqrt(np.mean(np.square(self.z[min])))
                 rmstot = np.sqrt(np.mean(np.square(self.tot[min])))
                       
-                print(f"{min}, {self.x[min].size}," +
-                      f" {self.x[min].mean():.3f}," +
-                      f" {self.x[min].ptp():.3f}," +
-                      f" {rmsx:.3f}," +
-                      f" {self.x[min].std():.3f}," +
-                      f" {self.y[min].mean():.3f}," +
-                      f" {self.y[min].ptp():.3f}," +
-                      f" {rmsy:.3f}," +
-                      f" {self.y[min].std():.3f}," +
-                      f" {self.y[min].mean():.3f}," +
-                      f" {self.y[min].ptp():.3f}," +
-                      f"{rmsz:.3f}," +
-                      f"{self.z[min].std():.3f}," +
-                      f" {self.tot[min].mean():.3f}," +
-                      f" {self.tot[min].ptp():.3f}," +
-                      f" {rmstot:.3f}," +
-                      f"{self.tot[min].std():.3f}," +
-                      f" {rmsx:.3f}")
+                #print(f"{min}, {self.x[min].size}," +
+                #      f" {self.x[min].mean():.3f}," +
+                #      f" {self.x[min].ptp():.3f}," +
+                #      f" {rmsx:.3f}," +
+                #      f" {self.x[min].std():.3f}," +
+                #      f" {self.y[min].mean():.3f}," +
+                #      f" {self.y[min].ptp():.3f}," +
+                #      f" {rmsy:.3f}," +
+                #      f" {self.y[min].std():.3f}," +
+                #      f" {self.y[min].mean():.3f}," +
+                #      f" {self.y[min].ptp():.3f}," +
+                #      f"{rmsz:.3f}," +
+                #      f"{self.z[min].std():.3f}," +
+                #      f" {self.tot[min].mean():.3f}," +
+                #      f" {self.tot[min].ptp():.3f}," +
+                #      f" {rmstot:.3f}," +
+                #      f"{self.tot[min].std():.3f}," +
+                #      f" {rmsx:.3f}")
                 writer.writerow([min,
                                  self.x[min].size,
                                  self.x[min].mean(),
