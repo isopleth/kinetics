@@ -40,7 +40,7 @@ import sys
 from tkinter import filedialog
 import tkinter as tk
 import csv
-
+import io
 from Row import Row
 
 class StatsProcessor:
@@ -48,7 +48,7 @@ class StatsProcessor:
     def process(self, filename):
         # Count number of lines in file to get array dimension
         count = 0
-        with open(filename, "r") as self.fh:
+        with io.open(filename, "rt", newline="") as self.fh:
             line = self.fh.readline().strip()
             while line:
                 row = Row(line)
@@ -69,7 +69,7 @@ class StatsProcessor:
         rowAbove6 = [0,0,0]
         rowAbove1 = [0,0,0]
 
-        with open(filename, "r") as self.fh:
+        with io.open(filename, "rt", newline="") as self.fh:
             line = self.fh.readline().strip()
             index = 0
             while line:
