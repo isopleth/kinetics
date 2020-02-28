@@ -122,8 +122,9 @@ class Processor:
                     plt.axvline(line ,c="red")
                 plt.xlabel("minute")
                 plt.plot(truncated[:, [index]])
-                plt.savefig(f"short_{fileTitle[index]}.pdf")
-                plt.show()
+                plt.savefig(f"short_{fileTitle[index]}")
+                plt.draw()
+                plt.close()
         else:
             xlinesList = []
 
@@ -135,9 +136,9 @@ class Processor:
                 plt.axvline(line ,c="red")
             plt.xlabel("minute")
             plt.plot(data[:, [index]])
-            plt.savefig(f"long_{fileTitle[index]}.pdf")
-            plt.show()
-            
+            plt.savefig(f"long_{fileTitle[index]}")
+            plt.draw()
+            plt.close()
 def main():
     controlFile = None
     if len(sys.argv) < 2:
