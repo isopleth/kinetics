@@ -37,7 +37,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import tkinter as tk
-import os.path as path
+import os
 
 class Processor:
 
@@ -47,7 +47,15 @@ class Processor:
         generation of short plots as well as the normal ones. It contains
         the following in the section [PLOT] -- start is the minute to
         start "short" plot, end -- is the minute to end the "short" plot """
-    
+
+        # e.g. fred/minutes_2020-10-20.csv gives path = fred, suffix =
+        # 2020-10-20
+        path, name = os.path.split(filename)
+        prefix = os.path.splitext(name)[0]
+        suffix = prefix.split("_")[1]
+        if suffix is None:
+            suffix = ""
+
         config = configparser.ConfigParser()
         if controlFile is not None:
             if path.exists(controlFile):
@@ -58,7 +66,6 @@ class Processor:
 
         # Numpy CSV reader
         data = np.genfromtxt(filename, delimiter=",")
-        print(data)
 
         title = [ "minute", "size",
                   "Mean of x acceleration over minute",
@@ -79,23 +86,23 @@ class Processor:
                   "std dev of tot acceleration over minute"]
 
         fileTitle = [ "", "",
-                  "mean_x.pdf",
-                  "peak_to_peak_x.pdf",
-                  "rms_x.pdf",
-                  "std_dev_x.pdf",
-                  "mean_y.pdf",
-                  "peak_to_peak_y.pdf",
-                  "rms_y.pdf",
-                  "std_dev_y.pdf",
-                  "mean_z.pdf",
-                  "peak_to_peak_z.pdf",
-                  "rms_z.pdf",
-                  "std_dev_z.pdf",
-                  "mean_total.pdf",
-                  "peak_to_peak_total.pdf",
-                  "rms_total.pdf",
-                  "std_dev_total.pdf"]
-                  
+                  "mean_x",
+                  "peak_to_peak_x",
+                  "rms_x",
+                  "std_dev_x",
+                  "mean_y",
+                  "peak_to_peak_y",
+                  "rms_y",
+                  "std_dev_y",
+                  "mean_z",
+                  "peak_to_peak_z",
+                  "rms_z",
+                  "std_dev_z",
+                  "mean_total",
+                  "peak_to_peak_total",
+                  "rms_total",
+                  "std_dev_total"]
+
         # All the interesting stuff happens in the first few mins in
         # some datasets
         if config.has_section("PLOT"):
@@ -113,7 +120,7 @@ class Processor:
                 xlines = config.get("PLOT","xlines")
             else:
                 xlines = None
-            xlinesList = xlines.split(',')            
+            xlinesList = xlines.split(',')
             truncated = data[start:end]
             for index in range(2, len(title)):
                 plt.title(title[index])
@@ -122,7 +129,9 @@ class Processor:
                     plt.axvline(line ,c="red")
                 plt.xlabel("minute")
                 plt.plot(truncated[:, [index]])
-                plt.savefig(f"short_{fileTitle[index]}")
+                plt.savefig(self.makeOutFile(path,
+                                "subsection_" +
+                                fileTitle[index] + "_" + suffix))
                 plt.draw()
                 plt.close()
         else:
@@ -133,12 +142,21 @@ class Processor:
             plt.title(title[index])
             for line in xlinesList:
                 line = int(line.strip())
-                plt.axvline(line ,c="red")
+                plt.axvline(line, c="red")
             plt.xlabel("minute")
             plt.plot(data[:, [index]])
-            plt.savefig(f"long_{fileTitle[index]}")
+            plt.savefig(self.makeOutFile(path,
+                            "plot_" +
+                            fileTitle[index] + "_" + suffix))
             plt.draw()
             plt.close()
+
+    def makeOutFile(self, path, filename):
+        """ Make output filename """
+        fullPath = os.path.join(path, filename + ".pdf")
+        print("Output file is", fullPath)
+        return fullPath
+
 def main():
     controlFile = None
     if len(sys.argv) < 2:
@@ -154,10 +172,10 @@ def main():
         args = parser.parse_args()
         filePath = args.filename
         controlFile = args.controlfile
-        
+
     processor = Processor()
     processor.process(filePath, controlFile)
-    
+
 if __name__ == "__main__":
     main()
-  
+

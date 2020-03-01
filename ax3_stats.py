@@ -41,10 +41,29 @@ from tkinter import filedialog
 import tkinter as tk
 import csv
 from Row import Row
+import os
 
 class StatsProcessor:
-        
-    def process(self, filename):  
+
+    def makeOutFile(self, filename, firstLine):
+        """ Make output filename """
+        path = os.path.split(filename)[0]
+        startDate = firstLine.split()[0]
+        newName = "accelerometer_" + startDate + ".csv"
+        fullPath = os.path.join(path, newName)
+        print("Output file is", fullPath)
+        return fullPath
+
+
+    def getOutputFilename(self):
+        """Getter for output filename.  Use this instead of
+        self.outputFilename to make interface a bit more organised
+
+        """
+        return self.outputFilename
+
+    def process(self, filename):
+
         # Count number of lines in file to get array dimension
         count = 0
         with open(filename, "rt", newline="\n") as self.fh:
@@ -57,6 +76,7 @@ class StatsProcessor:
                     count += 1
                 line = self.fh.readline().strip()
 
+        self.filename = filename
         self.timestamp = np.array(["(empty)" for _ in range(count)])
         self.epoch = np.zeros((count,))
         self.x = np.zeros((count,))
@@ -68,53 +88,55 @@ class StatsProcessor:
         rowAbove6 = [0,0,0]
         rowAbove1 = [0,0,0]
 
+        self.firstLine = None
         with open(filename, "rt", newline="\n") as self.fh:
             line = self.fh.readline().strip()
             index = 0
             while line:
                 row = Row(line)
                 if row.skip:
-                    pass
+                     pass
                 else:
+                    if self.firstLine is None:
+                         self.firstLine = row.timestamp
                     self.timestamp[index] = row.timestamp
                     self.epoch[index] = row.getEpoch()
-
                     self.x[index] = row.val[0]
                     self.y[index] = row.val[1]
                     self.z[index] = row.val[2]
                     self.tot[index] = row.getTotAcc()
                     index += 1
 
-                    for iindex in range(len(row.val)):
-                        if abs(row.val[iindex]) >= 8:
-                            rowAbove8[iindex] = rowAbove8[iindex] + 1
-                        if abs(row.val[iindex]) >= 7:
-                            rowAbove7[iindex] = rowAbove7[iindex] + 1
-                        if abs(row.val[iindex]) >= 6:
-                            rowAbove6[iindex] = rowAbove6[iindex] + 1
-                        if abs(row.val[iindex]) >= 1:
-                            rowAbove1[iindex] = rowAbove1[iindex] + 1
+                    for axis in range(len(row.val)):
+                        if abs(row.val[axis]) >= 8:
+                            rowAbove8[axis] = rowAbove8[axis] + 1
+                        if abs(row.val[axis]) >= 7:
+                            rowAbove7[axis] = rowAbove7[axis] + 1
+                        if abs(row.val[axis]) >= 6:
+                            rowAbove6[axis] = rowAbove6[axis] + 1
+                        if abs(row.val[axis]) >= 1:
+                            rowAbove1[axis] = rowAbove1[axis] + 1
                 line = self.fh.readline().strip()
 
-        for iindex in range(len(row.val)):
+        for axis in range(len(row.val)):
             # size of x is the same as y and z
-            proportion = rowAbove8[iindex]/self.x.size            
-            print(f"axis {iindex}, +/-8 or more {rowAbove8[iindex]} times")
-            print(f"axis {iindex}, +/-7 or more {rowAbove7[iindex]} times")
-            print(f"axis {iindex}, +/-6 or more {rowAbove6[iindex]} times")
-            print(f"axis {iindex}, +/-1 or more {rowAbove1[iindex]} times")
-                
-        f = open("accelerometer.csv", "w")
-        with f:
-            writer = csv.writer(f)
+            proportion = rowAbove8[axis]/self.x.size
+            print(f"axis {axis}, +/-8 or more {rowAbove8[axis]} times")
+            print(f"axis {axis}, +/-7 or more {rowAbove7[axis]} times")
+            print(f"axis {axis}, +/-6 or more {rowAbove6[axis]} times")
+            print(f"axis {axis}, +/-1 or more {rowAbove1[axis]} times")
+        print()
+
+        self.outputFilename = self.makeOutFile(filename, self.firstLine)
+        outfile = open(self.outputFilename, "w")
+        with outfile:
+            writer = csv.writer(outfile)
             for index in range(self.epoch.size):
                 writer.writerow([self.epoch[index], self.x[index],
                                  self.y[index], self.z[index],
                                  self.tot[index]])
 
-
-                
-    def  subtractMeans(self):
+    def subtractMeans(self):
         meanx = self.x.mean()
         meany = self.y.mean()
         meanz = self.z.mean()
@@ -126,18 +148,37 @@ class StatsProcessor:
             self.tot[index] = self.tot[index] - meant
 
 class Minutes:
-    def __init__(self, processor):
+    """ This class converts the accelerometer data read by the StatsProcessor
+    class into the per-minute data """
+
+    def makeOutFile(self, processor):
+        """ Make output filename """
+        path = os.path.split(processor.filename)[0]
+        startDate = processor.firstLine.split()[0]
+        newName = "minutes_" + startDate + ".csv"
+        fullPath = os.path.join(path, newName)
+        print("Output file is", fullPath)
+        return fullPath
+
+    def getOutputFilename(self):
+        """Getter for output filename.  Use this instead of
+        self.outputFilename to make interface a bit more organised
+
+        """
+        return self.outputFilename
+
+    def process(self, processor):
+        """ Process the data """
         self.startMinute = self.toMinute(processor.epoch[0])
         self.endMinute = self.toMinute(processor.epoch[processor.epoch.size - 1])
         self.interval = int(self.endMinute - self.startMinute + 1)
-
         self.processor = processor
 
         self.timestamp = np.array(["(empty)" for _ in range(self.interval)])
         self.epoch = np.zeros((self.interval,))
         self.size = np.zeros((self.interval,))
         self.currentIndex = np.zeros((self.interval,))
-        
+
         self.x = []
         self.y = []
         self.z = []
@@ -160,7 +201,7 @@ class Minutes:
             self.tot.append(np.zeros((int(self.size[min]),)))
             self.check.append(np.zeros((int(self.size[min]),)))
 
-        for index in range(processor.x.size):            
+        for index in range(processor.x.size):
             min = self.toMinute(processor.epoch[index]) - self.startMinute
             rowIndex = int(self.currentIndex[min])
             self.x[min][rowIndex] = processor.x[index]
@@ -172,7 +213,7 @@ class Minutes:
 
         print()
         print(f"Points per minute are {self.currentIndex-1}")
-        
+
         # This is a sanity check to make sure that all values in
         # all minutes are filled in.  It should not output anything
         for min in range(self.interval):
@@ -180,8 +221,9 @@ class Minutes:
                 if self.check[min][index] != 1:
                     print(f"Check index {index} at minute {min}!!!")
 
-        f = open("minutes.csv", "w")
-        with f:
+        self.outputFilename = self.makeOutFile(processor)
+        outfile = open(self.outputFilename, "w")
+        with outfile:
             print()
             print("Minute,"+
                   "size,"+
@@ -202,31 +244,13 @@ class Minutes:
                   "tot peak to peak,"+
                   "tot std dev")
 
-            writer = csv.writer(f)
+            writer = csv.writer(outfile)
             for min in range(0, self.interval):
                 rmsx = np.sqrt(np.mean(np.square(self.x[min])))
                 rmsy = np.sqrt(np.mean(np.square(self.y[min])))
                 rmsz = np.sqrt(np.mean(np.square(self.z[min])))
                 rmstot = np.sqrt(np.mean(np.square(self.tot[min])))
-                      
-                #print(f"{min}, {self.x[min].size}," +
-                #      f" {self.x[min].mean():.3f}," +
-                #      f" {self.x[min].ptp():.3f}," +
-                #      f" {rmsx:.3f}," +
-                #      f" {self.x[min].std():.3f}," +
-                #      f" {self.y[min].mean():.3f}," +
-                #      f" {self.y[min].ptp():.3f}," +
-                #      f" {rmsy:.3f}," +
-                #      f" {self.y[min].std():.3f}," +
-                #      f" {self.y[min].mean():.3f}," +
-                #      f" {self.y[min].ptp():.3f}," +
-                #      f"{rmsz:.3f}," +
-                #      f"{self.z[min].std():.3f}," +
-                #      f" {self.tot[min].mean():.3f}," +
-                #      f" {self.tot[min].ptp():.3f}," +
-                #      f" {rmstot:.3f}," +
-                #      f"{self.tot[min].std():.3f}," +
-                #      f" {rmsx:.3f}")
+
                 writer.writerow([min,
                                  self.x[min].size,
                                  self.x[min].mean(),
@@ -245,20 +269,20 @@ class Minutes:
                                  self.tot[min].ptp(),
                                  rmstot,
                                  self.tot[min].std()])
-            
+
     def toMinute(self, second):
         """ Convert epoch seconds to minutes """
         minute = second // 60
         return int(minute)
-            
-def descriptive(type, array):
+
+def summarise(type, array):
     """ Summarise array"""
     while len(type) < 6:
         type = type + " "
     print(f"{type} -- n={array.size}, min={array.min():.2f}, "+
           f"max={array.max():.2f}, mean={array.mean():.2f}, "+
           f"std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
-                
+
 def main():
     if len(sys.argv) < 2:
         root = tk.Tk()
@@ -271,25 +295,34 @@ def main():
         parser.add_argument("filename", help="Input filename")
         args = parser.parse_args()
         filePath = args.filename
+        name, extension =  os.path.splitext(filePath)
+
+        if extension == ".CWA":
+            print("You need the .csv, not the .CWA", file=stderr)
+            os.exit(0)
 
     processor = StatsProcessor()
     processor.process(filePath)
     print("---descriptive stats---")
-    descriptive("x", processor.x);
-    descriptive("y", processor.y);
-    descriptive("z", processor.z);
-    descriptive("total", processor.tot);
+    summarise("x", processor.x);
+    summarise("y", processor.y);
+    summarise("z", processor.z);
+    summarise("total", processor.tot);
     print()
     print("---Subtract mean from each value to baseline---")
     processor.subtractMeans()
-    descriptive("x", processor.x);
-    descriptive("y", processor.y);
-    descriptive("z", processor.z);
-    descriptive("total", processor.tot);
+    summarise("x", processor.x);
+    summarise("y", processor.y);
+    summarise("z", processor.z);
+    summarise("total", processor.tot);
 
-    minutes = Minutes(processor)
+    minutes = Minutes()
+    minutes.process(processor)
     print(f"Dataset is {minutes.interval} minutes long")
-    
+    print()
+    print("Raw data output file is", processor.getOutputFilename())
+    print("Minutes data output file is", minutes.getOutputFilename())
+
 if __name__ == "__main__":
     main()
-  
+
