@@ -54,14 +54,6 @@ class StatsProcessor:
         print("Output file is", fullPath)
         return fullPath
 
-
-    def getOutputFilename(self):
-        """Getter for output filename.  Use this instead of
-        self.outputFilename to make interface a bit more organised
-
-        """
-        return self.outputFilename
-
     def process(self, filename):
 
         # Count number of lines in file to get array dimension
@@ -127,14 +119,15 @@ class StatsProcessor:
             print(f"axis {axis}, +/-1 or more {rowAbove1[axis]} times")
         print()
 
-        self.outputFilename = self.makeOutFile(filename, self.firstLine)
-        outfile = open(self.outputFilename, "w")
+        outputFilename = self.makeOutFile(filename, self.firstLine)
+        outfile = open(outputFilename, "w")
         with outfile:
             writer = csv.writer(outfile)
             for index in range(self.epoch.size):
                 writer.writerow([self.epoch[index], self.x[index],
                                  self.y[index], self.z[index],
                                  self.tot[index]])
+        return outputFilename
 
     def subtractMeans(self):
         meanx = self.x.mean()
@@ -151,24 +144,23 @@ class Minutes:
     """ This class converts the accelerometer data read by the StatsProcessor
     class into the per-minute data """
 
-    def makeOutFile(self, processor):
+    def makeOutFile(self, processor, baseline):
         """ Make output filename """
         path = os.path.split(processor.filename)[0]
         startDate = processor.firstLine.split()[0]
-        newName = "minutes_" + startDate + ".csv"
+        newName = ""
+        if baseline :
+            newName = "baselined_"
+        newName = newName + "minutes_" + startDate + ".csv"
         fullPath = os.path.join(path, newName)
         print("Output file is", fullPath)
         return fullPath
 
-    def getOutputFilename(self):
-        """Getter for output filename.  Use this instead of
-        self.outputFilename to make interface a bit more organised
+    def process(self, processor, baseline):
+        """Process the data.  Processor is the StatsProcessor object,
+        baseline is True if each minute of data is to be baselined
 
         """
-        return self.outputFilename
-
-    def process(self, processor):
-        """ Process the data """
         self.startMinute = self.toMinute(processor.epoch[0])
         self.endMinute = self.toMinute(processor.epoch[processor.epoch.size - 1])
         self.interval = int(self.endMinute - self.startMinute + 1)
@@ -221,8 +213,24 @@ class Minutes:
                 if self.check[min][index] != 1:
                     print(f"Check index {index} at minute {min}!!!")
 
-        self.outputFilename = self.makeOutFile(processor)
-        outfile = open(self.outputFilename, "w")
+        # Baseline
+        if baseline:
+            for min in range(self.interval):
+                xmean = self.x[min].mean()
+                ymean = self.y[min].mean()
+                zmean = self.z[min].mean()
+                totmean = self.tot[min].mean()
+
+                self.x[min] = self.x[min] - xmean
+                self.y[min] = self.y[min] - ymean
+                self.z[min] = self.z[min] - zmean
+                self.tot[min] = self.tot[min] - totmean
+                baselineVal = 1
+            else:
+                baselineVal = 0
+                
+        outputFilename = self.makeOutFile(processor, baseline)
+        outfile = open(outputFilename, "w")
         with outfile:
             print()
             print("Minute,"+
@@ -242,7 +250,8 @@ class Minutes:
                   "tot mean,"+
                   "tot rms,"+
                   "tot peak to peak,"+
-                  "tot std dev")
+                  "tot std dev,"+
+                  "is baselined")
 
             writer = csv.writer(outfile)
             for min in range(0, self.interval):
@@ -250,7 +259,9 @@ class Minutes:
                 rmsy = np.sqrt(np.mean(np.square(self.y[min])))
                 rmsz = np.sqrt(np.mean(np.square(self.z[min])))
                 rmstot = np.sqrt(np.mean(np.square(self.tot[min])))
-
+                baselineVal = 0
+                if baseline:
+                    baselineVal = 1
                 writer.writerow([min,
                                  self.x[min].size,
                                  self.x[min].mean(),
@@ -268,7 +279,9 @@ class Minutes:
                                  self.tot[min].mean(),
                                  self.tot[min].ptp(),
                                  rmstot,
-                                 self.tot[min].std()])
+                                 self.tot[min].std(),
+                                 baselineVal])
+        return outputFilename
 
     def toMinute(self, second):
         """ Convert epoch seconds to minutes """
@@ -302,26 +315,30 @@ def main():
             os.exit(0)
 
     processor = StatsProcessor()
-    processor.process(filePath)
+    datafile = processor.process(filePath)
     print("---descriptive stats---")
     summarise("x", processor.x);
     summarise("y", processor.y);
     summarise("z", processor.z);
     summarise("total", processor.tot);
     print()
-    print("---Subtract mean from each value to baseline---")
-    processor.subtractMeans()
-    summarise("x", processor.x);
-    summarise("y", processor.y);
-    summarise("z", processor.z);
-    summarise("total", processor.tot);
+    # This used to subtract the mean from each value
+    # print("---Subtract mean from each value to baseline---")
+    # processor.subtractMeans()
+    # summarise("x", processor.x);
+    # summarise("y", processor.y);
+    # summarise("z", processor.z);
+    # summarise("total", processor.tot);
 
     minutes = Minutes()
-    minutes.process(processor)
+    # Run without baselining the minutes data
+    nonBaselinedFile = minutes.process(processor, False)
+    baselinedFile = minutes.process(processor, True)
     print(f"Dataset is {minutes.interval} minutes long")
     print()
-    print("Raw data output file is", processor.getOutputFilename())
-    print("Minutes data output file is", minutes.getOutputFilename())
+    print("Raw data output file is", datafile)
+    print("Minutes data output file is", nonBaselinedFile)
+    print("Baselined minutes data output file is", baselinedFile)
 
 if __name__ == "__main__":
     main()

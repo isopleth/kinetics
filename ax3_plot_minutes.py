@@ -52,7 +52,8 @@ class Processor:
         # 2020-10-20
         path, name = os.path.split(filename)
         prefix = os.path.splitext(name)[0]
-        suffix = prefix.split("_")[1]
+        suffixIndex = len(prefix.split("_"))
+        suffix = prefix.split("_")[suffixIndex - 1]
         if suffix is None:
             suffix = ""
 
@@ -66,6 +67,8 @@ class Processor:
 
         # Numpy CSV reader
         data = np.genfromtxt(filename, delimiter=",")
+
+        baselined = data[0][18] != 0
 
         title = [ "minute", "size",
                   "Mean of x acceleration over minute",
@@ -123,15 +126,20 @@ class Processor:
             xlinesList = xlines.split(',')
             truncated = data[start:end]
             for index in range(2, len(title)):
+                theTitle = title[index]
+                if baselined:
+                    theTitle = "Baselined " + theTitle
                 plt.title(title[index])
                 for line in xlinesList:
                     line = int(line.strip())
                     plt.axvline(line ,c="red")
                 plt.xlabel("minute")
                 plt.plot(truncated[:, [index]])
-                plt.savefig(self.makeOutFile(path,
-                                "subsection_" +
-                                fileTitle[index] + "_" + suffix))
+                plt.savefig(self.makeOutFile(
+                    baselined,
+                    path,
+                    "subsection_" +
+                    fileTitle[index] + "_" + suffix))
                 plt.draw()
                 plt.close()
         else:
@@ -145,14 +153,18 @@ class Processor:
                 plt.axvline(line, c="red")
             plt.xlabel("minute")
             plt.plot(data[:, [index]])
-            plt.savefig(self.makeOutFile(path,
-                            "plot_" +
-                            fileTitle[index] + "_" + suffix))
+            plt.savefig(self.makeOutFile(
+                baselined,
+                path,
+                "plot_" +
+                fileTitle[index] + "_" + suffix))
             plt.draw()
             plt.close()
 
-    def makeOutFile(self, path, filename):
+    def makeOutFile(self, baselined, path, filename):
         """ Make output filename """
+        if baselined:
+            filename = "baselined_" + filename
         fullPath = os.path.join(path, filename + ".pdf")
         print("Output file is", fullPath)
         return fullPath
