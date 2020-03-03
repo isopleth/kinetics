@@ -304,7 +304,7 @@ def main():
             filetypes = [("Comma separated file (CSV) format",".csv")])
     else:
         parser = argparse.ArgumentParser(description=
-                                         "Descriptive statistics for accerometer file")
+                                         "Descriptive statistics for accelerometer file")
         parser.add_argument("filename", help="Input filename")
         args = parser.parse_args()
         filePath = args.filename
