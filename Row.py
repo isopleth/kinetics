@@ -8,8 +8,13 @@ class Row:
     """ Represents a row from the input file
     """
     
-    def __init__(self, line, verbose=True):
-        """ Initializer
+    def __init__(self, line, verbose=True, decode=True):
+        """Initializer.  line is the line read from the AX3 CSV file.
+        verbose is True to output information messages.  decode is
+        false if the numeric values should not be decoded.  You don't
+        normally want to skip decoding them except when the date/time
+        field only is to be extracted.
+
         """
         # True if this row is to be skipped because it contains a syntax
         # error etc
@@ -17,6 +22,9 @@ class Row:
         self._epoch = None
         self._totalAcc = None
         self.timestamp = None
+        self.date = None
+        self.time = None
+        self.rawLine = line
 
         line = line.strip()
         fields = line.split(",")
@@ -32,13 +40,15 @@ class Row:
             return
             
         self.timestamp = fields[0].strip()
-        try:
-            self.val = array.array('d', [Decimal(fields[1]),
-                                         Decimal(fields[2]),
-                                         Decimal(fields[3])])
-        except ValueError:
-            print(f"Conversion error, ignore {line}", file=sys.stderr)
-            self.skip = True
+        self.date, self.time, *rest = self.timestamp.split(" ", 1)
+        if decode:
+            try:
+                self.val = array.array('d', [Decimal(fields[1]),
+                                             Decimal(fields[2]),
+                                             Decimal(fields[3])])
+            except ValueError:
+                print(f"Conversion error, ignore {line}", file=sys.stderr)
+                self.skip = True
 
     def __str__(self):
         """ String representation of row"""
