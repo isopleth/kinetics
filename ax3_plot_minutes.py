@@ -59,7 +59,7 @@ class Processor:
 
         config = configparser.ConfigParser()
         if controlFile is not None:
-            if path.exists(controlFile):
+            if os.path.exists(controlFile):
                 config.read(controlFile)
             else:
                 print(f"Control file {controlFile} not found", file=sys.stderr)
