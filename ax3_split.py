@@ -71,7 +71,7 @@ class Processor:
                         if outfile is not None:
                             outfile.close()
                         outfile = open(outputFilename, "w")
-                    outfile.write(row.rawLine)
+                    outfile.write(row.rawLine + "\n")
                 line = self.fh.readline().strip()
         if outfile is not None:
             outfile.close()
