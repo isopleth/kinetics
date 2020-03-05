@@ -129,7 +129,7 @@ class Processor:
                 theTitle = title[index]
                 if baselined:
                     theTitle = "Baselined " + theTitle
-                plt.title(title[index])
+                plt.title(theTitle)
                 for line in xlinesList:
                     line = int(line.strip())
                     plt.axvline(line ,c="red")
@@ -147,7 +147,10 @@ class Processor:
 
         # For the full dataset
         for index in range(2, len(title)):
-            plt.title(title[index])
+            theTitle = title[index]
+            if baselined:
+                theTitle = "Baselined " + theTitle
+            plt.title(theTitle)
             for line in xlinesList:
                 line = int(line.strip())
                 plt.axvline(line, c="red")
