@@ -55,7 +55,7 @@ class StatsProcessor:
         return fullPath
 
     def process(self, filename):
-
+        """ Process the file """
         # Count number of lines in file to get array dimension
         count = 0
         with open(filename, "rt", newline="\n") as self.fh:
@@ -66,6 +66,8 @@ class StatsProcessor:
                     pass
                 else:
                     count += 1
+                    if count % 1000000 == 0:
+                        print(f"{count} lines counted")
                 line = self.fh.readline().strip()
 
         self.filename = filename
@@ -98,6 +100,8 @@ class StatsProcessor:
                     self.z[index] = row.val[2]
                     self.tot[index] = row.getTotAcc()
                     index += 1
+                    if index % 1000000 == 0:
+                        print(f"{index} lines read")
 
                     for axis in range(len(row.val)):
                         if abs(row.val[axis]) >= 8:
@@ -192,7 +196,7 @@ class Minutes:
             self.z.append(np.zeros((int(self.size[min]),)))
             self.tot.append(np.zeros((int(self.size[min]),)))
             self.check.append(np.zeros((int(self.size[min]),)))
-
+            
         for index in range(processor.x.size):
             min = self.toMinute(processor.epoch[index]) - self.startMinute
             rowIndex = int(self.currentIndex[min])
@@ -202,6 +206,7 @@ class Minutes:
             self.tot[min][rowIndex] = processor.tot[index]
             self.check[min][rowIndex] = 1
             self.currentIndex[min] = rowIndex + 1
+
 
         print()
         print(f"Points per minute are {self.currentIndex-1}")
@@ -262,7 +267,10 @@ class Minutes:
                 baselineVal = 0
                 if baseline:
                     baselineVal = 1
-                writer.writerow([min,
+                if self.x[min].size == 0:
+                    print(f"No data for minute {min}")
+                else:
+                    writer.writerow([min,
                                  self.x[min].size,
                                  self.x[min].mean(),
                                  self.x[min].ptp(),
