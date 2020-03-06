@@ -263,14 +263,26 @@ def main():
         root.withdraw()
         filePath = filedialog.askopenfilename(
             filetypes = [("Comma separated file (CSV) format",".csv")])
+        axis = 3
+        limit = 0.05
     else:
         parser = argparse.ArgumentParser(description=
-                                         "Descriptive statistics for accelerometer file")
+                                         "Convert accelerometer file to per second values")
         parser.add_argument("filename", help="Input filename")
+        parser.add_argument("--axis", help="Axis number", type=int, default="3")
+        parser.add_argument("--limit", help="+/- limit, default is 5 (percent)", type=int, default="5")
         args = parser.parse_args()
         filePath = args.filename
         name, extension =  os.path.splitext(filePath)
-
+        axis = args.axis
+        limit = args.limit
+        if axis < 0 or axis > 3:
+            print(f"Bad value for axis, {axis}, using 3 (i.e. total")
+            axis = 3
+        limit = abs(float(limit))
+        limit = limit / 100
+        
+            
         if extension == ".CWA":
             print("You need the .csv, not the .CWA", file=stderr)
             os.exit(0)
@@ -286,7 +298,7 @@ def main():
 
     seconds = Seconds()
     secondsFile = seconds.process(processor)
-    sweptFile = seconds.sweep(0.05, 3)
+    sweptFile = seconds.sweep(limit, axis)
     print(f"Dataset is {seconds.interval} seconds long")
     print()
     print("Seconds data output file is", secondsFile)
