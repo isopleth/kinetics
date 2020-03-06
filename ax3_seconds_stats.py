@@ -178,7 +178,7 @@ class Seconds:
         outfile = open(outputFilename, "w")
         with outfile:
             writer = csv.writer(outfile)
-            for sec in range(0, self.interval):
+            for sec in range(self.interval):
                 writer.writerow([sec,
                                  self.x[sec].mean(),
                                  self.y[sec].mean(),
@@ -190,6 +190,65 @@ class Seconds:
         """ Convert epoch seconds seconds by truncating fractional part """
         return int(math.floor(second))
 
+    def makeSweptOutFile(self, processor, minmax, axis):
+        """ Make output filename """
+        path = os.path.split(processor.filename)[0]
+        startDate = processor.firstLine.split()[0]
+        minmax = minmax * 100
+        minmax = int(minmax)
+        if axis == 0:
+            axis = "x"
+        elif axis == 1:
+            axis = "y"
+        elif axis == 2:
+            axis = "z"
+        elif axis == 3:
+            axis = "tot"
+        else:
+            axis = "unknown"
+            
+        newName = "seconds_" + str(minmax) + "_" + axis + "_" + startDate + ".csv"
+        fullPath = os.path.join(path, newName)
+        print("Output file is", fullPath)
+        return fullPath
+
+    def checkKeep(self, old, new, minmax):
+        absval = abs(old)
+        limit = absval * minmax
+        lowlim = old - limit
+        highlim = old + limit
+        if new > highlim or new < lowlim:
+            return True
+        return False
+    
+    def sweep(self, minmax, axis):
+        """ Generate a new file, throwing away values where the next axis value
+        differs by less than minmax proportion from the previous one
+        """
+        outputFilename = self.makeSweptOutFile(self.processor, minmax, axis)
+        outfile = open(outputFilename, "w")
+        with outfile:
+            writer = csv.writer(outfile)
+            for sec in range(len(self.x)):
+                output = True
+                if sec > 0:
+                    if axis == 0:
+                        output = self.checkKeep(self.x[sec-1].mean(), self.x[sec].mean(), minmax)
+                    elif axis == 1:
+                        output = self.checkKeep(self.y[sec-1].mean(), self.y[sec].mean(), minmax)
+                    elif axis == 2:
+                        output = self.checkKeep(self.z[sec-1].mean(), self.z[sec].mean(), minmax)
+                    elif axis == 3:
+                        output = self.checkKeep(self.tot[sec-1].mean(), self.tot[sec].mean(), minmax)
+                if output:
+                    writer.writerow([sec,
+                                 self.x[sec].mean(),
+                                 self.y[sec].mean(),
+                                 self.z[sec].mean(),
+                                 self.tot[sec].mean()])
+        return outputFilename
+        
+    
 def summarise(type, array):
     """ Summarise array"""
     while len(type) < 6:
@@ -225,13 +284,13 @@ def main():
     summarise("total", processor.tot);
     print()
 
-
     seconds = Seconds()
-    # Run without baselining the minutes data
     secondsFile = seconds.process(processor)
+    sweptFile = seconds.sweep(0.05, 3)
     print(f"Dataset is {seconds.interval} seconds long")
     print()
     print("Seconds data output file is", secondsFile)
+    print("Swept file file is", sweptFile)
 
 if __name__ == "__main__":
     main()
