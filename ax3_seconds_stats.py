@@ -105,18 +105,30 @@ class StatsProcessor:
                 line = self.fh.readline().strip()
 
 class Seconds:
-    """ This class converts the accelerometer data read by the StatsProcessor
-    class into the per-second data """
+    """This class converts the accelerometer data read by the
+    StatsProcessor class into the per-second data
 
-    def makeOutFile(self, processor):
+    """
+
+    def makeMeansOutFile(self, processor):
         """ Make output filename """
         path = os.path.split(processor.filename)[0]
         startDate = processor.firstLine.split()[0]
-        newName = "seconds_" + startDate + ".csv"
+        newName = "seconds_mean_" + startDate + ".csv"
         fullPath = os.path.join(path, newName)
         print("Output file is", fullPath)
         return fullPath
 
+    def makeRmsOutFile(self, processor):
+        """ Make output filename """
+        path = os.path.split(processor.filename)[0]
+        startDate = processor.firstLine.split()[0]
+        newName = "seconds_rms_" + startDate + ".csv"
+        fullPath = os.path.join(path, newName)
+        print("Output file is", fullPath)
+        return fullPath
+
+    
     def process(self, processor):
         """Process the data.
 
@@ -174,16 +186,44 @@ class Seconds:
                 if self.check[sec][index] != 1:
                     print(f"Check index {index} at minute {min}!!!")
 
-        outputFilename = self.makeOutFile(processor)
+    def writeMeans(self, processor):
+        """ Write per-second data calculated using means """
+        outputFilename = self.makeMeansOutFile(processor)
         outfile = open(outputFilename, "w")
         with outfile:
             writer = csv.writer(outfile)
             for sec in range(self.interval):
-                writer.writerow([sec,
+                if len(self.x[sec]) == 0:
+                    print(f"No values for {sec}")
+                else:
+                    writer.writerow([sec,
                                  self.x[sec].mean(),
                                  self.y[sec].mean(),
                                  self.z[sec].mean(),
                                  self.tot[sec].mean()])
+        return outputFilename
+
+    def rms(self, array):
+        squareTotal = 0
+        for a in array:
+            squareTotal = squareTotal + (a * a)
+        return math.sqrt(squareTotal / len(array))
+    
+    def writeRms(self, processor):
+        """ Write per-second data calculated using root mean square """
+        outputFilename = self.makeRmsOutFile(processor)
+        outfile = open(outputFilename, "w")
+        with outfile:
+            writer = csv.writer(outfile)
+            for sec in range(self.interval):
+                if len(self.x[sec]) == 0:
+                    print(f"No values for {sec}")
+                else:
+                    writer.writerow([sec,
+                                 self.rms(self.x[sec]),
+                                 self.rms(self.y[sec]),
+                                 self.rms(self.z[sec]),
+                                 self.rms(self.tot[sec])])
         return outputFilename
 
     def toSecond(self, second):
@@ -222,8 +262,10 @@ class Seconds:
         return False
     
     def sweep(self, minmax, axis):
-        """ Generate a new file, throwing away values where the next axis value
-        differs by less than minmax proportion from the previous one
+        """Generate a new file, throwing away values where the next axis
+        value differs by less than minmax proportion from the previous
+        one
+
         """
         outputFilename = self.makeSweptOutFile(self.processor, minmax, axis)
         outfile = open(outputFilename, "w")
@@ -290,18 +332,21 @@ def main():
     processor = StatsProcessor()
     datafile = processor.process(filePath)
     print("---descriptive stats---")
-    summarise("x", processor.x);
-    summarise("y", processor.y);
-    summarise("z", processor.z);
-    summarise("total", processor.tot);
+    summarise("x", processor.x)
+    summarise("y", processor.y)
+    summarise("z", processor.z)
+    summarise("total", processor.tot)
     print()
 
     seconds = Seconds()
-    secondsFile = seconds.process(processor)
+    seconds.process(processor)
+    secondsMeansFile =  seconds.writeMeans(processor)
+    secondsRmsFile =  seconds.writeRms(processor)
     sweptFile = seconds.sweep(limit, axis)
     print(f"Dataset is {seconds.interval} seconds long")
     print()
-    print("Seconds data output file is", secondsFile)
+    print("Seconds means data output file is", secondsMeansFile)
+    print("Seconds RMS data output file is", secondsRmsFile)
     print("Swept file file is", sweptFile)
 
 if __name__ == "__main__":
