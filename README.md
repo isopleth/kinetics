@@ -53,6 +53,53 @@ Output files for `<input_file>.CWA` are `<input_file>.csv` and
 `<input_file>_metadata.csv`, the latter containing the metadata read
 from the CWA file.
 
+### ax3_split.py
+
+Split AX3 CSV data file into per-day files.
+
+### ax3_median.py
+
+Median filter AX3 CSV data.
+
+The command line options are:
+
+* `--window WINDOW`  Set the window size, which must be an odd number. Default is 25.
+
+### ax3_plot_minutes.py
+
+### ax3_seconds_stats.py
+
+### ax3_stats.py
+
+Generate descriptive statistics for AX3 CSV file.  Also produces three new output files. These are
+* The CSV file with the date/time field converted to epoch and a total acceleration field added
+* A CSV file with aggregated data for each minute
+* A CSV file with aggregated data for each minute after the mean value for that minute has been subtracted
+
+For the last two files, the  fields are:
+
+* Minute
+* number of readings in minute
+* x mean
+* x rms
+* x peak to peak
+* x std dev
+* y mean
+* y rms
+* y peak to peak
+* y std dev
+* z mean
+* z rms
+* z peak to peak
+* z std dev
+* tot mean
+* tot rms
+* tot peak to peak
+* tot std dev
+* is baselined
+
+
+
 ### average.py
 
 Reduce the CSV file by taking the means of all x, y, and z values within small
