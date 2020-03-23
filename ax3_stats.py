@@ -33,7 +33,7 @@
 # Axes:
 # X is the long axis
 # Y is the across-the-device axis
-# Z is the across-the-device axis
+# Z is across the thickness of the device
 import numpy as np
 import argparse
 import sys
