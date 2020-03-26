@@ -3,7 +3,7 @@
 #
 # BSD 2-Clause License
 #
-# Copyright (c) 2019, Jason Leake
+# Copyright (c) 2020, Jason Leake
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Generate per-second accelerometer data
+# Median filter for AX3 CSV data
 #
 
 # Axes:
@@ -43,31 +43,10 @@ import numpy as np
 import os
 import sys
 import tkinter as tk
+from medianfilter import medianFilter
 
 class MedianProcessor:
-
-    def medianFilter(self, inputArray, window):
-        """Apply median filter to an array.  Based on
-        https://gist.github.com/bhawkins/3535131 """
-        assert window % 2 == 1, "Median filter length must be odd."
-        halfWindow = (window - 1) // 2
-        # Create an array containing the window-full of points for each
-        # point in the input array.  Once this is filled, use the
-        # numpy median() to calculate the median of each
-        outputArray = np.zeros((len(inputArray), window),
-                               dtype=inputArray.dtype)
-        # Filling in each point in the centre of the window
-        outputArray[:,halfWindow] = inputArray
-        # Now fill in the rest of the windows
-        for windowIndex in range(halfWindow):
-            halfWindowIndex = halfWindow - windowIndex
-            outputArray[:halfWindowIndex, windowIndex] = inputArray[0]
-            outputArray[-halfWindowIndex:, -(windowIndex + 1)] = inputArray[-1]
-            outputArray[halfWindowIndex:, windowIndex] = inputArray[:-halfWindowIndex]            
-            outputArray[:-halfWindowIndex, -(windowIndex + 1)] = inputArray[halfWindowIndex:]
-            
-        return np.median(outputArray, axis=1)
-        
+    
     def makeOutFile(self, filename):
         """ Make output filename """
         path, name = os.path.split(filename)
@@ -120,9 +99,9 @@ class MedianProcessor:
                     print(f"{index} data lines read")
 
                 line = fh.readline().strip()
-        medx = self.medianFilter(x, window)
-        medy = self.medianFilter(y, window)
-        medz = self.medianFilter(z, window)
+        medx = medianFilter(x, window, len(x)//50)
+        medy = medianFilter(y, window, len(y)//50)
+        medz = medianFilter(z, window, len(z)//50)
 
         outputFilename = self.makeOutFile(filename)
         with open(outputFilename, "w") as outfile:
@@ -146,7 +125,8 @@ def main():
         parser = argparse.ArgumentParser(description=
                                          "Convert accelerometer file to per second values")
         parser.add_argument("filename", help="Input filename")
-        parser.add_argument("--window", help="Window size", type=int, default="25")
+        parser.add_argument("--window", help="Window size",
+                            type=int, default="25")
         args = parser.parse_args()
         filePath = args.filename
         name, extension =  os.path.splitext(filePath)
