@@ -50,19 +50,19 @@
 # - Add some more annotation abbreviations
 # - Don't print a * for every record converted, just a summary occasionally
 # - Some re-arrangement of the code
+# - Add cwa function to make trivially callable from other Python modules
 #
 
-from struct import pack, unpack
-import time
 from datetime import datetime
-import sys
-import io
-import tkinter as tk
-from tkinter import filedialog
-from os import path
 from math import floor
+from os import path
+from struct import pack, unpack
+from tkinter import filedialog
 import argparse
-
+import io
+import sys
+import time
+import tkinter as tk
 
 def byte(value):
     return (value + 2 ** 7) % 2 ** 8 - 2 ** 7 
@@ -119,7 +119,7 @@ class Parameters:
             self.version = args.version
             self.linux = args.linux
             self.standardGravity = args.sg
-            self.writeHeader = not args.noheader 
+            self.writeHeader = not args.noheader
         else:
             self.verbose = False
             self.limit = None
@@ -127,6 +127,14 @@ class Parameters:
             self.linux = False
             self.standardGravity = False
             self.writeHeader = True
+
+    def set(self, verbose, limit, version, linux, sg, noheader):
+        self.verbose = verbose
+        self.limit = limit
+        self.version = version
+        self.linux = linux
+        self.standardGravity = sg
+        self.writeHeader = not noheader 
 
 class CWA:
 
@@ -158,10 +166,10 @@ class CWA:
             print("No filename specified", file=sys.stderr)
             return linesGenerated
 
-        outputFilename = path.splitext(self._filename)[0] + ".csv"
-        metadataFilename = path.splitext(self._filename)[0] + "_metadata.txt"
+        self.outputFilename = path.splitext(self._filename)[0] + ".csv"
+        self.metadataFilename = path.splitext(self._filename)[0] + "_metadata.txt"
         print(f"Converting {self._filename}, output is "
-              f"{outputFilename} and {metadataFilename}")
+              f"{self.outputFilename} and {self.metadataFilename}")
         if not path.exists(self._filename):
             print("File does not exist", file=sys.stderr)
             return linesGenerated
@@ -170,7 +178,7 @@ class CWA:
         lastTimestampOffset = None
         lastTimestamp = None
 
-        with open(outputFilename, 'w') as out:
+        with open(self.outputFilename, 'w') as out:
             if parameters.writeHeader:
                 out.write("datetime, x, y, z{}".format(lineEnd))
             
@@ -181,7 +189,7 @@ class CWA:
                         print("Section header is %s" % (header))
 
                     if header == 'MD':
-                        self.parse_header(metadataFilename=metadataFilename)
+                        self.parse_header(metadataFilename=self.metadataFilename)
                     elif header == 'UB':
                         blockSize = unpack('H', self.fh.read(2))[0]
                     elif header == 'SI':
@@ -490,5 +498,16 @@ def main():
     linesGenerated = cwa(parameters)
     print(f"{linesGenerated} lines of output generated")
 
+def cwa(filePath, verbose=False, limit=None, version=False,
+        linux=False, sg=False, noheader=False):
+    """ This is an easy to use entry point for other modules
+    """
+    cwa = CWA(filePath)
+    parameters = Parameters()
+    parameters.set(verbose, limit, version, linux, sg, noheader)
+    linesGenerated = cwa(parameters)
+    print(f"{linesGenerated} lines of output generated")
+    return [ cwa.outputFilename, cwa.metadataFilename ]
+    
 if __name__ == "__main__":
     main()
