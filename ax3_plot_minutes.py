@@ -33,21 +33,59 @@ from tkinter import filedialog
 import argparse
 import configparser
 import csv
+import matplotlib.dates as mdate
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import sys
 import tkinter as tk
-import os
 
-class Processor:
+class PlotMinutes:
+    """ Produce the minutes plots
+    """
 
-    def __call__(self, filename, controlFile, showtime,
-                 ymin, ymax, selectedPlot):
+    def _plot(self, data, index, xlines, title,
+              outputfile, showtime, ymin, ymax, grid):
+        fig, axis = plt.subplots()
+        if ymax is not None or ymin is not None:
+            plt.ylim(ymin, ymax)
+
+        axis.grid(grid)
+        axis.set_title(title)
+        axis.set_ylabel("acceleration (g)")
+        for line in xlines:
+            line = int(line.strip())
+            plt.axvline(line, c="red")
+
+        if showtime:
+            # Index 0 of data is epoch time
+            seconds = mdate.epoch2num(data[:, [0]])
+            dateFormat = "%H:%M"
+            dateFormatter = mdate.DateFormatter(dateFormat)
+            axis.xaxis.set_major_locator(mdate.HourLocator(interval=6))
+            axis.xaxis.set_minor_locator(mdate.HourLocator())
+            axis.xaxis.set_major_formatter(dateFormatter)
+            fig.autofmt_xdate()
+            axis.set_xlabel("time")
+            plt.plot(seconds, data[:, [index]])
+        else:
+            axis.set_xlabel("minute")
+            # Index 1 of data is minutes from start
+            plt.plot(data[:, [1]], data[:, [index]])
+        plt.savefig(outputfile)
+        plt.draw()
+        plt.close()
+
+    def __call__(self, filename, controlFile=None, showtime=False,
+                 ymin=None, ymax=None, selectedPlot=None, grid=False):
         """Process a CSV file of per-minute data as produced by ax3_stats.py.
         controlFile, if specified, is an INI file that controls the
-        generation of short plots as well as the normal ones. It contains
-        the following in the section [PLOT] -- start is the minute to
-        start "short" plot, end -- is the minute to end the "short" plot """
+        generation of short plots as well as the normal ones. It
+        contains the following in the section [PLOT] -- start is the
+        minute to start "short" plot, end -- is the minute to end the
+        "short" plot
+
+        """
 
         # e.g. fred/minutes_2020-10-20.csv gives path = fred, suffix =
         # 2020-10-20
@@ -153,25 +191,21 @@ class Processor:
                     if selectedPlot != fileTitle[index]:
                         continue
                 
-                theTitle = title[index]
+                plotTitle = title[index]
                 if baselined:
-                    theTitle = "Baselined " + theTitle
-                plt.title(theTitle)
-                for line in xlinesList:
-                    line = int(line.strip())
-                    plt.axvline(line ,c="red")
-                plt.xlabel("minute")
-                if ymax is not None or ymin is not None:
-                    plt.ylim(ymin, ymax)
-                plt.plot(truncated[:, [1]], truncated[:, [index]])
-                plt.savefig(self.makeOutFile(
-                    baselined,
-                    path,
-                    "subsection_" +
-                    fileTitle[index] + "_" + suffix))
-                plt.draw()
-                plt.close()
+                    plotTitle = "Baselined " + plotTitle
+
+                outputFile = self.makeOutFile(baselined,
+                                              path,
+                                              "subsection_" +
+                                              fileTitle[index] + "_" + suffix)
+
+                self._plot(truncated, index, xlinesList,
+                           plotTitle, outputFile,
+                           showtime, ymin, ymax, grid)
         else:
+            # Create an empty array so that nothing is plotted
+            # in the next block for the full dataset
             xlinesList = []
 
         # For the full dataset
@@ -179,25 +213,19 @@ class Processor:
             if selectedPlot is not None:
                 if selectedPlot != fileTitle[index]:
                     continue
-                
-            theTitle = title[index]
+
+            plotTitle = title[index]
             if baselined:
-                theTitle = "Baselined " + theTitle
-            plt.title(theTitle)
-            for line in xlinesList:
-                line = int(line.strip())
-                plt.axvline(line, c="red")
-            plt.xlabel("minute")
-            if ymax is not None or ymin is not None:
-                plt.ylim(ymin, ymax)
-            plt.plot(data[:, [1]], data[:, [index]])
-            plt.savefig(self.makeOutFile(
-                baselined,
-                path,
-                "plot_" +
-                fileTitle[index] + "_" + suffix))
-            plt.draw()
-            plt.close()
+                plotTitle = "Baselined " + plotTitle
+
+            outputFile = self.makeOutFile(baselined,
+                                          path,
+                                          "plot_" +
+                                          fileTitle[index] + "_" + suffix)
+            
+            self._plot(data, index, xlinesList,
+                       plotTitle, outputFile,
+                       showtime, ymin, ymax, grid)
 
     def makeOutFile(self, baselined, path, filename):
         """ Make output filename """
@@ -214,10 +242,12 @@ def main():
         root.withdraw()
         filePath = filedialog.askopenfilename(
             filetypes = [("Comma separated file (CSV) format",".csv")])
-        minuteZero = True
+        controlFile = None
+        showtime = None
         ymin = None
         ymax = None
-
+        selectedPlot = None
+        grid = None
     else:
         parser = argparse.ArgumentParser(description=
                                          "Plot statistics for accelerometer file")
@@ -227,7 +257,7 @@ def main():
         parser.add_argument("--showtime", help="X axis is actual time", action="store_true")
         parser.add_argument("--ymin", help="Y axis minimum", type=float, default=None)
         parser.add_argument("--ymax", help="Y axis maximum", type=float, default=None)
-        
+        parser.add_argument("--grid", help="Add grid to plot", action="store_true")
         args = parser.parse_args()
         filePath = args.filename
         controlFile = args.controlfile
@@ -235,9 +265,11 @@ def main():
         ymin = args.ymin
         ymax = args.ymax
         selectedPlot = args.select
+        grid = args.grid
 
-    processor = Processor()
-    processor(filePath, controlFile, showtime, ymin, ymax, selectedPlot)
+    plotMinutes = PlotMinutes()
+    plotMinutes(filePath, controlFile, showtime,
+                ymin, ymax, selectedPlot, grid)
 
 if __name__ == "__main__":
     main()
