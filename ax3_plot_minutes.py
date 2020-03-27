@@ -46,6 +46,8 @@ class PlotMinutes:
 
     def _plot(self, data, index, xlines, title,
               outputfile, showtime, ymin, ymax, grid):
+        """ Generate the actual plot. Returns outputfile
+        """
         fig, axis = plt.subplots()
         if ymax is not None or ymin is not None:
             plt.ylim(ymin, ymax)
@@ -75,6 +77,7 @@ class PlotMinutes:
         plt.savefig(outputfile)
         plt.draw()
         plt.close()
+        return outputfile
 
     def __call__(self, filename, controlFile=None, showtime=False,
                  ymin=None, ymax=None, selectedPlot=None, grid=False):
@@ -96,6 +99,8 @@ class PlotMinutes:
         if suffix is None:
             suffix = ""
 
+        outputFiles = []
+        
         config = configparser.ConfigParser()
         if controlFile is not None:
             if os.path.exists(controlFile):
@@ -200,9 +205,9 @@ class PlotMinutes:
                                               "subsection_" +
                                               fileTitle[index] + "_" + suffix)
 
-                self._plot(truncated, index, xlinesList,
-                           plotTitle, outputFile,
-                           showtime, ymin, ymax, grid)
+                outputfiles.append(self._plot(truncated, index, xlinesList,
+                                              plotTitle, outputFile,
+                                              showtime, ymin, ymax, grid))
         else:
             # Create an empty array so that nothing is plotted
             # in the next block for the full dataset
@@ -223,9 +228,9 @@ class PlotMinutes:
                                           "plot_" +
                                           fileTitle[index] + "_" + suffix)
             
-            self._plot(data, index, xlinesList,
-                       plotTitle, outputFile,
-                       showtime, ymin, ymax, grid)
+            outputFiles.append(self._plot(data, index, xlinesList,
+                                          plotTitle, outputFile,
+                                          showtime, ymin, ymax, grid))
 
     def makeOutFile(self, baselined, path, filename):
         """ Make output filename """

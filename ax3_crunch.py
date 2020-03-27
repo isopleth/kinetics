@@ -7,9 +7,10 @@
 # etc.
 
 from pathlib import Path
+import ax3_plot_minutes
+import ax3_seconds_stats
 import ax3_split
 import ax3_stats
-import ax3_plot_minutes
 import cwa
 import sys
 import timeit
@@ -34,11 +35,10 @@ def process(file):
     for splitFile in splitFiles:
         datafile, nonBaselinedFile, baselinedFile = ax3_stats.stats(splitFile)
         plotMinutes = ax3_plot_minutes.PlotMinutes()
-        plotMinutes(nonBaselinedFile)
-        plotMinutes(baselinedFile)
+        plotMinutes(nonBaselinedFile, None, True, None, None, None, True)
+        plotMinutes(baselinedFile, None, True, None, None, None, True)
+        secondsMeansFile, secondsRmsFile, sweptFile = ax3_seconds_stats.process(splitFile)
         
-
-
 if len(sys.argv) != 2:
     raise ValueError('No .CWA file to process specified')
 elapsed = timeit.timeit(process(sys.argv[1]))

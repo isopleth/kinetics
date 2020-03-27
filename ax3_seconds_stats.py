@@ -55,7 +55,7 @@ class StatsProcessor:
         print("Output file is", fullPath)
         return fullPath
 
-    def process(self, filename):
+    def __call__(self, filename):
         """ Process the file """
         # Count number of lines in file to get array dimension
         print("Count lines in file")
@@ -107,7 +107,6 @@ class StatsProcessor:
 class Seconds:
     """This class converts the accelerometer data read by the
     StatsProcessor class into the per-second data
-
     """
 
     def makeMeansOutFile(self, processor):
@@ -128,8 +127,7 @@ class Seconds:
         print("Output file is", fullPath)
         return fullPath
 
-    
-    def process(self, processor):
+    def __call__(self, processor):
         """Process the data.
 
         """
@@ -299,6 +297,29 @@ def summarise(type, array):
           f"max={array.max():.2f}, mean={array.mean():.2f}, "+
           f"std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
 
+def process(filePath, limit = 0.05, axis = 3):
+    processor = StatsProcessor()
+    datafile = processor(filePath)
+    print("---descriptive stats---")
+    summarise("x", processor.x)
+    summarise("y", processor.y)
+    summarise("z", processor.z)
+    summarise("total", processor.tot)
+    print()
+
+    seconds = Seconds()
+    seconds(processor)
+    secondsMeansFile = seconds.writeMeans(processor)
+    secondsRmsFile = seconds.writeRms(processor)
+    sweptFile = seconds.sweep(limit, axis)
+    print(f"Dataset is {seconds.interval} seconds long")
+    print()
+    print("Seconds means data output file is", secondsMeansFile)
+    print("Seconds RMS data output file is", secondsRmsFile)
+    print("Swept file file is", sweptFile)
+
+    return [ secondsMeansFile, secondsRmsFile, sweptFile ]
+    
 def main():
     if len(sys.argv) < 2:
         root = tk.Tk()
@@ -322,32 +343,13 @@ def main():
             print(f"Bad value for axis, {axis}, using 3 (i.e. total")
             axis = 3
         limit = abs(float(limit))
-        limit = limit / 100
-        
-            
+        limit = limit / 100        
+
         if extension == ".CWA":
             print("You need the .csv, not the .CWA", file=stderr)
             os.exit(0)
 
-    processor = StatsProcessor()
-    datafile = processor.process(filePath)
-    print("---descriptive stats---")
-    summarise("x", processor.x)
-    summarise("y", processor.y)
-    summarise("z", processor.z)
-    summarise("total", processor.tot)
-    print()
-
-    seconds = Seconds()
-    seconds.process(processor)
-    secondsMeansFile =  seconds.writeMeans(processor)
-    secondsRmsFile =  seconds.writeRms(processor)
-    sweptFile = seconds.sweep(limit, axis)
-    print(f"Dataset is {seconds.interval} seconds long")
-    print()
-    print("Seconds means data output file is", secondsMeansFile)
-    print("Seconds RMS data output file is", secondsRmsFile)
-    print("Swept file file is", sweptFile)
+    process(filePath, limit, axis)
 
 if __name__ == "__main__":
     main()
