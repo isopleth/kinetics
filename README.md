@@ -85,6 +85,30 @@ The command line options are:
 
 ### ax3_plot_minutes.py
 
+Plot minutes data.
+
+```
+usage: ax3_plot_minutes.py [-h] [--controlfile [CONTROLFILE]]
+                           [--select [SELECT]] [--showtime] [--ymin YMIN]
+                           [--ymax YMAX]
+                           filename
+
+Plot statistics for accelerometer file
+
+positional arguments:
+  filename              Input filename
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --controlfile [CONTROLFILE]
+                        INI file to control plotting
+  --select [SELECT]     INI file to control plotting
+  --showtime            X axis is actual time (not yet implemented)
+  --ymin YMIN           Y axis minimum
+
+  --ymax YMAX           Y axis maximum
+  ```
+
 ### ax3_seconds_stats.py
 
 ### ax3_stats.py
