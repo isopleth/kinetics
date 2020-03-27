@@ -55,7 +55,25 @@ from the CWA file.
 
 ### ax3_split.py
 
-Split AX3 CSV data file into per-day files.
+Split AX3 CSV data file into per-day files.  The command line parameter is the CSV file, produced by cwa.py
+The output files have the date of the data in them appended to the name part of the filename.
+
+For example:
+
+```
+python3 ax3_split.py ../myDataFile.csv
+Splitting ../myDatafile.csv
+Skip header line datetime, x, y, z
+
+Output file is ..//myDataFile_2020-01-29.csv
+Output file is ..//myDataFile_2020-01-30.csv
+Output file is ..//myDataFile_2020-01-31.csv
+Output file is ..//myDatafile_2020-01-01.csv
+Output file is ..//myDataFile_2020-02-02.csv
+Output file is ..//myDataFile_2020-02-03.csv
+Output file is ..//myDataFile_2020-02-04.csv
+Output file is ..//myDataFile_2020-02-05.csv
+```
 
 ### ax3_median.py
 
@@ -78,27 +96,30 @@ Generate descriptive statistics for AX3 CSV file.  Also produces three new outpu
 
 For the last two files, the  fields are:
 
-* Minute
-* number of readings in minute
-* x mean
-* x rms
-* x peak to peak
-* x std dev
-* y mean
-* y rms
-* y peak to peak
-* y std dev
-* z mean
-* z rms
-* z peak to peak
-* z std dev
-* tot mean
-* tot rms
-* tot peak to peak
-* tot std dev
-* is baselined
+* Epoch time of this minute
+* minute number (0 is first minute in file)
+* number of readings in this minute
+* x axis mean acceleration
+* x axis rms acceleration
+* x axis peak to peak acceleration
+* x axis standard deviation
+* y axis mean acceleration
+* y axis rms acceleration
+* y axis peak to peak acceleration
+* y axis standard deviation
+* z axis mean acceleration
+* z axis rms acceleration
+* z axis peak to peak acceleration
+* z axis standard deviation
+* total acceleration mean acceleration
+* total acceleration rms acceleration
+* total acceleration peak to peak acceleration
+* total acceleration standard deviation
+* is baselined - a flag that is 0 for non-baselined data, 1 for baselined
 
+### ax3_crunch.py
 
+This runs a processing chain of some of the above programs on the .CWA file specified in the command line.
 
 ### average.py
 
@@ -127,7 +148,7 @@ The resolution is the number of decimal places in the epoch time to average
 values over.  1 means 0.1 second resolution, 10 would be 0.01 etc.  It is
 a bit clunky and we'll improve it later.
 
-cutoff is the cut-off frequency for the 4th order Butterworth high pass
+The cutoff is the cut-off frequency for the 4th order Butterworth high pass
 filter, in Hz. A value of 0.01 means 0.01 Hertz.
 
 The command line options are:
@@ -138,6 +159,8 @@ The command line options are:
 * `--version`        Display program version
 
 ## C++
+
+These are the modules written in C++:
 
 ### cleaner
 
