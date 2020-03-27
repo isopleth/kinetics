@@ -54,8 +54,9 @@ class Processor:
         print("Output file is", fullPath)
         return fullPath
 
-    def process(self, filename):
+    def __call__(self, filename):
         """ Split the CSV file into per-day files """
+        outfiles = []
         date = None
         outfile = None
         with open(filename, "rt", newline="\n") as self.fh:
@@ -68,6 +69,7 @@ class Processor:
                     if row.date != date:
                         date = row.date
                         outputFilename = self.makeOutFile(filename, date)
+                        outfiles.append(outputFilename)
                         if outfile is not None:
                             outfile.close()
                         outfile = open(outputFilename, "w")
@@ -75,6 +77,11 @@ class Processor:
                 line = self.fh.readline().strip()
         if outfile is not None:
             outfile.close()
+        return outfiles
+
+def split(filePath):
+    processor = Processor()
+    return processor(filePath)
 
 def main():
     if len(sys.argv) < 2:
@@ -94,8 +101,7 @@ def main():
             print("You need the .csv, not the .CWA", file=stderr)
             os.exit(0)
 
-    processor = Processor()
-    processor.process(filePath)
+    split(filePath)
 
 if __name__ == "__main__":
     main()
