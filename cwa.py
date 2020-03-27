@@ -104,10 +104,6 @@ def urldecode(input):
             output.append(ord(char))
     return output.decode('utf-8')
 
-class CWA_Sample:
-    pass
-
-
 class Parameters:
     """ Holds parameters derived from command line options etc
     """
@@ -129,12 +125,16 @@ class Parameters:
             self.writeHeader = True
 
     def set(self, verbose, limit, version, linux, sg, noheader):
+        """ Set parameters to non-default values """
         self.verbose = verbose
         self.limit = limit
         self.version = version
         self.linux = linux
         self.standardGravity = sg
         self.writeHeader = not noheader 
+
+class CWA_Sample:
+    pass
 
 class CWA:
 
@@ -147,7 +147,9 @@ class CWA:
         """ Parameters: filename - input filename
         """
         self._filename = filename
-    
+        self.outputFilename = path.splitext(self._filename)[0] + ".csv"
+        self.metadataFilename = path.splitext(self._filename)[0] + "_metadata.txt"
+
     def __call__(self, parameters):
 
         if parameters.linux:
@@ -159,15 +161,13 @@ class CWA:
             # My versions contain my github username to avoid
             # clashes, in case OpenMovement start producing their
             # own version numbering scheme
-            print("cwa.py, version Isopleth 1.02")
+            print("cwa.py, version Isopleth 1.03")
 
         linesGenerated = 0
         if len(self._filename) == 0:
             print("No filename specified", file=sys.stderr)
             return linesGenerated
 
-        self.outputFilename = path.splitext(self._filename)[0] + ".csv"
-        self.metadataFilename = path.splitext(self._filename)[0] + "_metadata.txt"
         print(f"Converting {self._filename}, output is "
               f"{self.outputFilename} and {self.metadataFilename}")
         if not path.exists(self._filename):
@@ -499,14 +499,15 @@ def main():
     print(f"{linesGenerated} lines of output generated")
 
 def cwa(filePath, verbose=False, limit=None, version=False,
-        linux=False, sg=False, noheader=False):
+        linux=False, sg=False, noheader=False, process=True):
     """ This is an easy to use entry point for other modules
     """
     cwa = CWA(filePath)
     parameters = Parameters()
     parameters.set(verbose, limit, version, linux, sg, noheader)
-    linesGenerated = cwa(parameters)
-    print(f"{linesGenerated} lines of output generated")
+    if process:
+        linesGenerated = cwa(parameters)
+        print(f"{linesGenerated} lines of output generated")
     return [ cwa.outputFilename, cwa.metadataFilename ]
     
 if __name__ == "__main__":
