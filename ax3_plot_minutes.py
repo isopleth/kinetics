@@ -41,7 +41,8 @@ import os
 
 class Processor:
 
-    def process(self, filename, controlFile):
+    def __call__(self, filename, controlFile, showtime,
+                 ymin, ymax, selectedPlot):
         """Process a CSV file of per-minute data as produced by ax3_stats.py.
         controlFile, if specified, is an INI file that controls the
         generation of short plots as well as the normal ones. It contains
@@ -68,9 +69,19 @@ class Processor:
         # Numpy CSV reader
         data = np.genfromtxt(filename, delimiter=",")
 
-        baselined = data[0][18] != 0
+        # Baselined flag is in the last field of the CSV file.  Only look
+        # at the first row since the value is the same throughout the file
+        baselined = data[0][19] != 0
+        if baselined:
+            print("This is baselined data")
 
-        title = [ "minute", "size",
+        # These are the fields in the CSV file, except for the last,
+        # is_baselined one.  We don't get as far as processing that
+        # because we stop when we have exhausted the fileTitle list
+        # below
+        title = [ "epoch",
+                  "minute",
+                  "size",
                   "Mean of x acceleration over minute",
                   "peak to peak of x acceleration over minute",
                   "RMS of x acceleration over minute",
@@ -88,26 +99,35 @@ class Processor:
                   "RMS of tot acceleration over minute",
                   "std dev of tot acceleration over minute"]
 
-        fileTitle = [ "", "",
-                  "mean_x",
-                  "peak_to_peak_x",
-                  "rms_x",
-                  "std_dev_x",
-                  "mean_y",
-                  "peak_to_peak_y",
-                  "rms_y",
-                  "std_dev_y",
-                  "mean_z",
-                  "peak_to_peak_z",
-                  "rms_z",
-                  "std_dev_z",
-                  "mean_total",
-                  "peak_to_peak_total",
-                  "rms_total",
-                  "std_dev_total"]
+        # These are the titles of the graphics files.  Empty string
+        # means no file is produced.  Each file plots minutes against
+        # the CSV field corresponding to the current index into this
+        # array. e.g. mean_x is index 3, so the mean_x file plots
+        # minutes against (zero based) column #3, which is the mean x
+        # values per minute
+        fileTitle = [ "",
+                      "",
+                      "",
+                      "mean_x",
+                      "peak_to_peak_x",
+                      "rms_x",
+                      "std_dev_x",
+                      "mean_y",
+                      "peak_to_peak_y",
+                      "rms_y",
+                      "std_dev_y",
+                      "mean_z",
+                      "peak_to_peak_z",
+                      "rms_z",
+                      "std_dev_z",
+                      "mean_total",
+                      "peak_to_peak_total",
+                      "rms_total",
+                      "std_dev_total"]
 
         # All the interesting stuff happens in the first few mins in
-        # some datasets
+        # some datasets.  This is the code for producing plots which
+        # are limited and annotated by the optional config file
         if config.has_section("PLOT"):
             if config.has_option("PLOT", "start"):
                 start = int(config.get("PLOT", "start"))
@@ -123,9 +143,16 @@ class Processor:
                 xlines = config.get("PLOT","xlines")
             else:
                 xlines = None
+            # xlinesList is the list of X values that have vertical
+            # red lines displayed
             xlinesList = xlines.split(',')
+            # The subset of points that are to be plotted
             truncated = data[start:end]
-            for index in range(2, len(title)):
+            for index in range(3, len(title)):
+                if selectedPlot is not None:
+                    if selectedPlot != fileTitle[index]:
+                        continue
+                
                 theTitle = title[index]
                 if baselined:
                     theTitle = "Baselined " + theTitle
@@ -134,7 +161,9 @@ class Processor:
                     line = int(line.strip())
                     plt.axvline(line ,c="red")
                 plt.xlabel("minute")
-                plt.plot(truncated[:, [index]])
+                if ymax is not None or ymin is not None:
+                    plt.ylim(ymin, ymax)
+                plt.plot(truncated[:, [1]], truncated[:, [index]])
                 plt.savefig(self.makeOutFile(
                     baselined,
                     path,
@@ -146,7 +175,11 @@ class Processor:
             xlinesList = []
 
         # For the full dataset
-        for index in range(2, len(title)):
+        for index in range(3, len(title)):
+            if selectedPlot is not None:
+                if selectedPlot != fileTitle[index]:
+                    continue
+                
             theTitle = title[index]
             if baselined:
                 theTitle = "Baselined " + theTitle
@@ -155,7 +188,9 @@ class Processor:
                 line = int(line.strip())
                 plt.axvline(line, c="red")
             plt.xlabel("minute")
-            plt.plot(data[:, [index]])
+            if ymax is not None or ymin is not None:
+                plt.ylim(ymin, ymax)
+            plt.plot(data[:, [1]], data[:, [index]])
             plt.savefig(self.makeOutFile(
                 baselined,
                 path,
@@ -179,17 +214,30 @@ def main():
         root.withdraw()
         filePath = filedialog.askopenfilename(
             filetypes = [("Comma separated file (CSV) format",".csv")])
+        minuteZero = True
+        ymin = None
+        ymax = None
+
     else:
         parser = argparse.ArgumentParser(description=
                                          "Plot statistics for accelerometer file")
         parser.add_argument("filename", help="Input filename")
         parser.add_argument("--controlfile", nargs="?", help="INI file to control plotting")
+        parser.add_argument("--select", nargs="?", help="INI file to control plotting")
+        parser.add_argument("--showtime", help="X axis is actual time", action="store_true")
+        parser.add_argument("--ymin", help="Y axis minimum", type=float, default=None)
+        parser.add_argument("--ymax", help="Y axis maximum", type=float, default=None)
+        
         args = parser.parse_args()
         filePath = args.filename
         controlFile = args.controlfile
+        showtime = args.showtime
+        ymin = args.ymin
+        ymax = args.ymax
+        selectedPlot = args.select
 
     processor = Processor()
-    processor.process(filePath, controlFile)
+    processor(filePath, controlFile, showtime, ymin, ymax, selectedPlot)
 
 if __name__ == "__main__":
     main()
