@@ -186,50 +186,52 @@ class Minutes:
         # in an array which is going to be used to size the individual
         # arrays for each minute
         for index in range(0, processor.x.size):
-            min = self.toMinute(processor.epoch[index]) - self.startMinute
-            self.size[min] = self.size[min] + 1
+            minute = self.toMinute(processor.epoch[index]) - self.startMinute
+            self.size[minute] = self.size[minute] + 1
 
         # Now create the numpy arrays for each minute with the correct size
-        for min in range(self.interval):
-            self.x.append(np.zeros((int(self.size[min]),)))
-            self.y.append(np.zeros((int(self.size[min]),)))
-            self.z.append(np.zeros((int(self.size[min]),)))
-            self.tot.append(np.zeros((int(self.size[min]),)))
-            self.check.append(np.zeros((int(self.size[min]),)))
+        for minute in range(self.interval):
+            self.x.append(np.zeros((int(self.size[minute]),)))
+            self.y.append(np.zeros((int(self.size[minute]),)))
+            self.z.append(np.zeros((int(self.size[minute]),)))
+            self.tot.append(np.zeros((int(self.size[minute]),)))
+            self.check.append(np.zeros((int(self.size[minute]),)))
             
         for index in range(processor.x.size):
-            min = self.toMinute(processor.epoch[index]) - self.startMinute
-            rowIndex = int(self.currentIndex[min])
-            self.x[min][rowIndex] = processor.x[index]
-            self.y[min][rowIndex] = processor.y[index]
-            self.z[min][rowIndex] = processor.z[index]
-            self.tot[min][rowIndex] = processor.tot[index]
-            self.check[min][rowIndex] = 1
-            self.currentIndex[min] = rowIndex + 1
+            minute = self.toMinute(processor.epoch[index]) - self.startMinute
+            if self.epoch[minute] == 0:
+                # Epoch time is the minute as epoch time
+                self.epoch[minute] = int(self.toMinute(processor.epoch[index]) * 60)
+            rowIndex = int(self.currentIndex[minute])
+            self.x[minute][rowIndex] = processor.x[index]
+            self.y[minute][rowIndex] = processor.y[index]
+            self.z[minute][rowIndex] = processor.z[index]
+            self.tot[minute][rowIndex] = processor.tot[index]
+            self.check[minute][rowIndex] = 1
+            self.currentIndex[minute] = rowIndex + 1
 
-
-        print()
-        print(f"Points per minute are {self.currentIndex-1}")
+        ## print()
+        ## print(f"Points per minute are {self.currentIndex-1}")
 
         # This is a sanity check to make sure that all values in
         # all minutes are filled in.  It should not output anything
-        for min in range(self.interval):
-            for index in range(len(self.check[min])):
-                if self.check[min][index] != 1:
-                    print(f"Check index {index} at minute {min}!!!")
+        for minute in range(self.interval):
+            for index in range(len(self.check[minute])):
+                if self.check[minute][index] != 1:
+                    print(f"Check index {index} at minute {minute}!!!")
 
         # Baseline
         if baseline:
-            for min in range(self.interval):
-                xmean = self.x[min].mean()
-                ymean = self.y[min].mean()
-                zmean = self.z[min].mean()
-                totmean = self.tot[min].mean()
+            for minute in range(self.interval):
+                xmean = self.x[minute].mean()
+                ymean = self.y[minute].mean()
+                zmean = self.z[minute].mean()
+                totmean = self.tot[minute].mean()
 
-                self.x[min] = self.x[min] - xmean
-                self.y[min] = self.y[min] - ymean
-                self.z[min] = self.z[min] - zmean
-                self.tot[min] = self.tot[min] - totmean
+                self.x[minute] = self.x[minute] - xmean
+                self.y[minute] = self.y[minute] - ymean
+                self.z[minute] = self.z[minute] - zmean
+                self.tot[minute] = self.tot[minute] - totmean
                 baselineVal = 1
             else:
                 baselineVal = 0
@@ -238,57 +240,60 @@ class Minutes:
         outfile = open(outputFilename, "w")
         with outfile:
             print()
-            print("Minute,"+
-                  "size,"+
-                  "x mean,"+
-                  "x rms,"+
-                  "x peak to peak,"+
-                  "x std dev,"+
-                  "y mean,"+
-                  "y rms,"+
-                  "y peak to peak,"+
-                  "y std dev,"+
-                  "z mean,"+
-                  "z rms,"+
-                  "z peak to peak,"+
-                  "z std dev,"+
-                  "tot mean,"+
-                  "tot rms,"+
-                  "tot peak to peak,"+
-                  "tot std dev,"+
-                  "is baselined")
+            print("fields in CSV file are: " +
+                  "epoch," +
+                  "minute," +
+                  "size," +
+                  "x mean," +
+                  "x rms," +
+                  "x peak to peak," +
+                  "x std dev," +
+                  "y mean," +
+                  "y rms," +
+                  "y peak to peak," +
+                  "y std dev," +
+                  "z mean," +
+                  "z rms," +
+                  "z peak to peak," +
+                  "z std dev," +
+                  "tot mean," +
+                  "tot rms," +
+                  "tot peak to peak," +
+                  "tot std dev," +
+                  "is baselined flag")
 
             writer = csv.writer(outfile)
-            for min in range(0, self.interval):
-                rmsx = np.sqrt(np.mean(np.square(self.x[min])))
-                rmsy = np.sqrt(np.mean(np.square(self.y[min])))
-                rmsz = np.sqrt(np.mean(np.square(self.z[min])))
-                rmstot = np.sqrt(np.mean(np.square(self.tot[min])))
+            for minute in range(0, self.interval):
+                rmsx = np.sqrt(np.mean(np.square(self.x[minute])))
+                rmsy = np.sqrt(np.mean(np.square(self.y[minute])))
+                rmsz = np.sqrt(np.mean(np.square(self.z[minute])))
+                rmstot = np.sqrt(np.mean(np.square(self.tot[minute])))
                 baselineVal = 0
                 if baseline:
                     baselineVal = 1
-                if self.x[min].size == 0:
-                    print(f"No data for minute {min}")
+                if self.x[minute].size == 0:
+                    print(f"No data for minute {minute}")
                 else:
-                    writer.writerow([min,
-                                 self.x[min].size,
-                                 self.x[min].mean(),
-                                 self.x[min].ptp(),
-                                 rmsx,
-                                 self.x[min].std(),
-                                 self.y[min].mean(),
-                                 self.y[min].ptp(),
-                                 rmsy,
-                                 self.y[min].std(),
-                                 self.z[min].mean(),
-                                 self.z[min].ptp(),
-                                 rmsz,
-                                 self.z[min].std(),
-                                 self.tot[min].mean(),
-                                 self.tot[min].ptp(),
-                                 rmstot,
-                                 self.tot[min].std(),
-                                 baselineVal])
+                    writer.writerow([self.epoch[minute],
+                                     minute,
+                                     self.x[minute].size,
+                                     self.x[minute].mean(),
+                                     self.x[minute].ptp(),
+                                     rmsx,
+                                     self.x[minute].std(),
+                                     self.y[minute].mean(),
+                                     self.y[minute].ptp(),
+                                     rmsy,
+                                     self.y[minute].std(),
+                                     self.z[minute].mean(),
+                                     self.z[minute].ptp(),
+                                     rmsz,
+                                     self.z[minute].std(),
+                                     self.tot[minute].mean(),
+                                     self.tot[minute].ptp(),
+                                     rmstot,
+                                     self.tot[minute].std(),
+                                     baselineVal])
         return outputFilename
 
     def toMinute(self, second):
@@ -300,28 +305,13 @@ def summarise(type, array):
     """ Summarise array"""
     while len(type) < 6:
         type = type + " "
-    print(f"{type} -- n={array.size}, min={array.min():.2f}, "+
-          f"max={array.max():.2f}, mean={array.mean():.2f}, "+
+    print(f"{type} -- n={array.size}, min={array.min():.2f}, " +
+          f"max={array.max():.2f}, mean={array.mean():.2f}, " +
           f"std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
 
-def main():
-    if len(sys.argv) < 2:
-        root = tk.Tk()
-        root.withdraw()
-        filePath = filedialog.askopenfilename(
-            filetypes = [("Comma separated file (CSV) format",".csv")])
-    else:
-        parser = argparse.ArgumentParser(description=
-                                         "Descriptive statistics for accelerometer file")
-        parser.add_argument("filename", help="Input filename")
-        args = parser.parse_args()
-        filePath = args.filename
-        name, extension =  os.path.splitext(filePath)
-
-        if extension == ".CWA":
-            print("You need the .csv, not the .CWA", file=stderr)
-            os.exit(0)
-
+def stats(filePath):
+    """ Main processing function
+    """
     processor = StatsProcessor()
     datafile = processor.process(filePath)
     print("---descriptive stats---")
@@ -343,11 +333,34 @@ def main():
     nonBaselinedFile = minutes.process(processor, False)
     baselinedFile = minutes.process(processor, True)
     print(f"Dataset is {minutes.interval} minutes long")
+    return [ datafile, nonBaselinedFile, baselinedFile ]
+    
+def main():
+    """ Command line entry point
+    """
+    if len(sys.argv) < 2:
+        root = tk.Tk()
+        root.withdraw()
+        filePath = filedialog.askopenfilename(
+            filetypes = [("Comma separated file (CSV) format",".csv")])
+    else:
+        parser = argparse.ArgumentParser(description=
+                                         "Descriptive statistics for accelerometer file")
+        parser.add_argument("filename", help="Input filename")
+        args = parser.parse_args()
+        filePath = args.filename
+        name, extension =  os.path.splitext(filePath)
+
+        if extension == ".CWA":
+            print("You need the .csv, not the .CWA", file=stderr)
+            os.exit(0)
+
+    datafile, nonBaselinedFile, baselinedFile = stats(filePath)
     print()
     print("Raw data output file is", datafile)
     print("Minutes data output file is", nonBaselinedFile)
     print("Baselined minutes data output file is", baselinedFile)
-
+    
 if __name__ == "__main__":
     main()
 
