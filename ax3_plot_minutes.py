@@ -115,8 +115,6 @@ class PlotMinutes:
         # Baselined flag is in the last field of the CSV file.  Only look
         # at the first row since the value is the same throughout the file
         baselined = data[0][19] != 0
-        if baselined:
-            print("This is baselined data")
 
         # These are the fields in the CSV file, except for the last,
         # is_baselined one.  We don't get as far as processing that
