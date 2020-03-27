@@ -102,8 +102,9 @@ optional arguments:
   -h, --help            show this help message and exit
   --controlfile [CONTROLFILE]
                         INI file to control plotting
+  --grid                Add grid to plot
   --select [SELECT]     INI file to control plotting
-  --showtime            X axis is actual time (not yet implemented)
+  --showtime            X axis is actual time
   --ymin YMIN           Y axis minimum
 
   --ymax YMAX           Y axis maximum
