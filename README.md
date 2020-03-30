@@ -144,7 +144,27 @@ For the last two files, the  fields are:
 
 ### ax3_crunch.py
 
-This runs a processing chain of some of the above programs on the .CWA file specified in the command line.
+This runs a processing chain of some of the above programs on a .CWA file.  It takes one or two command line parameters. The first is the .CWA file to process
+and the second is the name of an optional .ini format configuration file to obtain the settings to use in the various processing steps.  If it is not specified, then `crunch_default.ini` is used.
+
+e.g.
+
+`python3 ax3_crunch myfile.CWA crunch_params.ini`
+
+or
+
+`python3 ax3_crunch myfile.CWA`
+
+It runs the following steps:
+
+* cwa.py if the CSV file corresponding to the .CWA does not already exist. If
+it does exist it skips this step to save time
+* ax3_split.py on the resulting CSV
+* For each file produced by ax3_split.py, it runs
+** ax3_stats.py
+** ax3_plot_minutes.py
+** ax3_seconds_stats.py, by default using axis 3 for the limit checking for the "swept" file, and a limit of 0.05
+
 
 ### average.py
 

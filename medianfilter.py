@@ -66,7 +66,9 @@ def medianFilter(inputArray, window, verboseUpdates = 0):
         outputArray[arrayIndex] = np.median(medianArray)
 
         if verboseUpdates != 0 and (arrayIndex + 1) % verboseUpdates == 0:
-            print(f"Median completed for {arrayIndex + 1} entries")
+            percent = (100 * arrayIndex) // len(inputArray)
+            print(f"{arrayIndex + 1} medians " +
+                  f"calculated = {percent}% of entries")
     return outputArray
 
 def test():

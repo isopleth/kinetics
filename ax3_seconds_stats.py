@@ -57,6 +57,7 @@ class StatsProcessor:
 
     def __call__(self, filename):
         """ Process the file """
+        print(f"ax3_seconds_stats.py processing {filename}")
         # Count number of lines in file to get array dimension
         print("Count lines in file")
         count = 0
@@ -188,17 +189,26 @@ class Seconds:
         """ Write per-second data calculated using means """
         outputFilename = self.makeMeansOutFile(processor)
         outfile = open(outputFilename, "w")
+        noValuesSecs = []
         with outfile:
             writer = csv.writer(outfile)
+            writer.writerow(["second",
+                             "x_mean",
+                             "y_mean",
+                             "z_mean",
+                             "tot_mean"])
+
             for sec in range(self.interval):
                 if len(self.x[sec]) == 0:
-                    print(f"No values for {sec}")
+                    noValuesSecs.append(sec)
                 else:
                     writer.writerow([sec,
                                  self.x[sec].mean(),
                                  self.y[sec].mean(),
                                  self.z[sec].mean(),
                                  self.tot[sec].mean()])
+        if len(noValuesSecs) != 0:
+            print(f"No values for {len(noValuesSecs)} one second time periods")
         return outputFilename
 
     def rms(self, array):
@@ -211,17 +221,20 @@ class Seconds:
         """ Write per-second data calculated using root mean square """
         outputFilename = self.makeRmsOutFile(processor)
         outfile = open(outputFilename, "w")
+        noValuesSecs = []
         with outfile:
             writer = csv.writer(outfile)
             for sec in range(self.interval):
                 if len(self.x[sec]) == 0:
-                    print(f"No values for {sec}")
+                    noValuesSecs.append(sec)
                 else:
                     writer.writerow([sec,
                                  self.rms(self.x[sec]),
                                  self.rms(self.y[sec]),
                                  self.rms(self.z[sec]),
                                  self.rms(self.tot[sec])])
+        if len(noValuesSecs) != 0:
+            print(f"RMS - no values for {len(noValuesSecs)} one second time periods")
         return outputFilename
 
     def toSecond(self, second):
