@@ -124,21 +124,21 @@ For the last two files, the  fields are:
 * Epoch time of this minute
 * minute number (0 is first minute in file)
 * number of readings in this minute
-* x axis mean acceleration
 * x axis rms acceleration
 * x axis peak to peak acceleration
+* x axis mean acceleration
 * x axis standard deviation
 * y axis mean acceleration
-* y axis rms acceleration
 * y axis peak to peak acceleration
+* y axis rms acceleration
 * y axis standard deviation
 * z axis mean acceleration
-* z axis rms acceleration
 * z axis peak to peak acceleration
+* z axis rms acceleration
 * z axis standard deviation
 * total acceleration mean acceleration
-* total acceleration rms acceleration
 * total acceleration peak to peak acceleration
+* total acceleration rms acceleration
 * total acceleration standard deviation
 * is baselined - a flag that is 0 for non-baselined data, 1 for baselined
 

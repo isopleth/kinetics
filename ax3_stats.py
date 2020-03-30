@@ -54,7 +54,7 @@ class StatsProcessor:
         print("Output file is", fullPath)
         return fullPath
 
-    def process(self, filename):
+    def __call__(self, filename):
         """ Process the file """
         # Count number of lines in file to get array dimension
         count = 0
@@ -160,7 +160,7 @@ class Minutes:
         print("Output file is", fullPath)
         return fullPath
 
-    def process(self, processor, baseline):
+    def __call__(self, processor, baseline):
         """Process the data.  Processor is the StatsProcessor object,
         baseline is True if each minute of data is to be baselined
 
@@ -210,9 +210,6 @@ class Minutes:
             self.check[minute][rowIndex] = 1
             self.currentIndex[minute] = rowIndex + 1
 
-        ## print()
-        ## print(f"Points per minute are {self.currentIndex-1}")
-
         # This is a sanity check to make sure that all values in
         # all minutes are filled in.  It should not output anything
         for minute in range(self.interval):
@@ -239,26 +236,27 @@ class Minutes:
         outputFilename = self.makeOutFile(processor, baseline)
         outfile = open(outputFilename, "w")
         with outfile:
+            # Order of fields is MPRS
             print()
             print("fields in CSV file are: " +
                   "epoch," +
                   "minute," +
                   "size," +
                   "x mean," +
-                  "x rms," +
                   "x peak to peak," +
+                  "x rms," +
                   "x std dev," +
                   "y mean," +
-                  "y rms," +
                   "y peak to peak," +
+                  "y rms," +
                   "y std dev," +
                   "z mean," +
-                  "z rms," +
                   "z peak to peak," +
+                  "z rms," +
                   "z std dev," +
                   "tot mean," +
-                  "tot rms," +
                   "tot peak to peak," +
+                  "tot rms," +
                   "tot std dev," +
                   "is baselined flag")
 
@@ -274,6 +272,7 @@ class Minutes:
                 if self.x[minute].size == 0:
                     print(f"No data for minute {minute}")
                 else:
+                    # Order of fields is MPRS
                     writer.writerow([self.epoch[minute],
                                      minute,
                                      self.x[minute].size,
@@ -313,7 +312,7 @@ def stats(filePath):
     """ Main processing function
     """
     processor = StatsProcessor()
-    datafile = processor.process(filePath)
+    datafile = processor(filePath)
     print("---descriptive stats---")
     summarise("x", processor.x);
     summarise("y", processor.y);
@@ -330,8 +329,8 @@ def stats(filePath):
 
     minutes = Minutes()
     # Run without baselining the minutes data
-    nonBaselinedFile = minutes.process(processor, False)
-    baselinedFile = minutes.process(processor, True)
+    nonBaselinedFile = minutes(processor, False)
+    baselinedFile = minutes(processor, True)
     print(f"Dataset is {minutes.interval} minutes long")
     return [ datafile, nonBaselinedFile, baselinedFile ]
     

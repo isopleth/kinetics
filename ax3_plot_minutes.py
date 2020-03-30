@@ -120,6 +120,8 @@ class PlotMinutes:
         # is_baselined one.  We don't get as far as processing that
         # because we stop when we have exhausted the fileTitle list
         # below
+
+        # Order of fields is MPRS
         title = [ "epoch",
                   "minute",
                   "size",
@@ -146,6 +148,8 @@ class PlotMinutes:
         # array. e.g. mean_x is index 3, so the mean_x file plots
         # minutes against (zero based) column #3, which is the mean x
         # values per minute
+
+        # Order of fields is MPRS
         fileTitle = [ "",
                       "",
                       "",
