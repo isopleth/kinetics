@@ -106,14 +106,12 @@ def process(file, configFile):
             plotMinutes(baselinedFile, bcontrolfile,
                         showtime, ymin, ymax, thisPlot, grid)
 
-        axes = ["seconds_x", "seconds_y", "seconds_z", "seconds_total"]
-        for axis in range(len(axes)):
-            limit = get(config, axes[axis], "limit")
+            limit = get(config, "seconds_stat", "limit")
             if limit is not None:
                 limit = float(limit)
                 
             secondsMeansFile, secondsRmsFile, sweptFile = ax3_seconds_stats.process(splitFile,
-                                                                                    limit=limit, axis=axis)
+                                                                                    limit=limit, axis=3)
 
 def main():
     parser = argparse.ArgumentParser(description=
