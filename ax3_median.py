@@ -99,19 +99,22 @@ class MedianProcessor:
                     print(f"{index} data lines read")
 
                 line = fh.readline().strip()
+
+        print("Calculate x axis medians")
         medx = medianFilter(x, window, len(x)//50)
+        print("Calculate y axis medians")
         medy = medianFilter(y, window, len(y)//50)
+        print("Calculate z axis medians")
         medz = medianFilter(z, window, len(z)//50)
 
         outputFilename = self.makeOutFile(filename)
+        lineEnd = "\r\n"
         with open(outputFilename, "w") as outfile:
-            writer = csv.writer(outfile)
-            outfile.write(("datetime", "x", "y", "z"))
+            outfile.write("datetime, x, y, z{}".format(lineEnd))
             for index in range(len(timestamp)):
-                writer.writerow([timestamp[index],
-                                 medx[index],
-                                 medy[index],
-                                 medz[index]])
+                outfile.write("{},{:.06f},{:.06f},{:.06f}{}".format(
+                    timestamp[index], medx[index],
+                    medy[index], medz[index], lineEnd))
         return outputFilename
 
 def main():
@@ -120,13 +123,13 @@ def main():
         root.withdraw()
         filePath = filedialog.askopenfilename(
             filetypes = [("Comma separated file (CSV) format",".csv")])
-        window = 25
+        window = 7
     else:
         parser = argparse.ArgumentParser(description=
                                          "Convert accelerometer file to per second values")
         parser.add_argument("filename", help="Input filename")
         parser.add_argument("--window", help="Window size",
-                            type=int, default="25")
+                            type=int, default="7")
         args = parser.parse_args()
         filePath = args.filename
         name, extension =  os.path.splitext(filePath)
