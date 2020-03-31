@@ -191,9 +191,9 @@ It runs the following steps:
 it does exist it skips this step to save time
 * ax3_split.py on the resulting CSV
 * For each file produced by ax3_split.py, it runs
-** ax3_stats.py
-** ax3_plot_minutes.py
-** ax3_seconds_stats.py, by default using axis 3 for the limit checking for the "swept" file, and a limit of 0.05
+- ax3_stats.py
+- ax3_plot_minutes.py
+- ax3_seconds_stats.py, by default using axis 3 for the limit checking for the "swept" file, and a limit of 0.05
 
 
 ### average.py
