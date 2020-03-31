@@ -33,7 +33,13 @@
 import numpy as np
 
 def medianFilter(inputArray, window, verboseUpdates = 0):
-    """Apply median filter to an array. """
+    """Apply median filter to an array. 
+    inputArray is a 1-D array containing the input data
+    window is the window size - must be odd
+    verboseUpdates is the number of entries to process before emitting
+    a status message.  Zero means no progress messages.
+    Returns a new array containing inputArray contents with median
+    filter applied """
     outputArray = np.zeros(len(inputArray), dtype=inputArray.dtype)
     halfWindow = (window - 1) // 2
     for arrayIndex in range(len(inputArray)):
