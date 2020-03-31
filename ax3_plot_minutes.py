@@ -44,7 +44,7 @@ class PlotMinutes:
     """ Produce the minutes plots
     """
 
-    def _plot(self, data, index, xlines, title,
+    def _plot(self, data, index, xlines, title, startEpoch,
               outputfile, showtime, ymin, ymax, grid):
         """ Generate the actual plot. Returns outputfile
         """
@@ -54,24 +54,32 @@ class PlotMinutes:
 
         axis.grid(grid)
         axis.set_title(title)
-        axis.set_ylabel("acceleration (g)")
-        for line in xlines:
-            line = int(line.strip())
-            plt.axvline(line, c="red")
+        axis.set_ylabel("Acceleration (g)")
 
         if showtime:
             # Index 0 of data is epoch time
             seconds = mdate.epoch2num(data[:, [0]])
             dateFormat = "%H:%M"
             dateFormatter = mdate.DateFormatter(dateFormat)
-            axis.xaxis.set_major_locator(mdate.HourLocator(interval=6))
+            locator = mdate.HourLocator(interval=6)
+            axis.xaxis.set_major_locator(locator)
             axis.xaxis.set_minor_locator(mdate.HourLocator())
+            locator.MAXTICKS = 5000
             axis.xaxis.set_major_formatter(dateFormatter)
-            fig.autofmt_xdate()
-            axis.set_xlabel("time")
+
+            axis.set_xlabel("Time")
+            for line in xlines:
+                # Value is minute, baselined to start of run
+                epoch = float(line.strip()) * 60 + float(startEpoch)
+                plt.axvline(mdate.epoch2num(epoch), c="red")
+
             plt.plot(seconds, data[:, [index]])
         else:
-            axis.set_xlabel("minute")
+            for line in xlines:
+                line = int(line.strip())
+                plt.axvline(line, c="red")
+
+            axis.set_xlabel("Minute")
             # Index 1 of data is minutes from start
             plt.plot(data[:, [1]], data[:, [index]])
         plt.savefig(outputfile)
@@ -192,7 +200,8 @@ class PlotMinutes:
             # red lines displayed
             xlinesList = xlines.split(',')
             # The subset of points that are to be plotted
-            truncated = data[start:end]
+            truncated = np.array(data[start:end, :])
+
             for index in range(3, len(title)):
                 if selectedPlot is not None:
                     if selectedPlot != fileTitle[index]:
@@ -207,8 +216,10 @@ class PlotMinutes:
                                               "subsection_" +
                                               fileTitle[index] + "_" + suffix)
 
-                outputfiles.append(self._plot(truncated, index, xlinesList,
-                                              plotTitle, outputFile,
+                outputFiles.append(self._plot(truncated, index, xlinesList,
+                                              plotTitle,
+                                              data[0, 0], # epoch time of start of file
+                                              outputFile,
                                               showtime, ymin, ymax, grid))
         else:
             # Create an empty array so that nothing is plotted
@@ -230,8 +241,9 @@ class PlotMinutes:
                                           "plot_" +
                                           fileTitle[index] + "_" + suffix)
             
-            outputFiles.append(self._plot(data, index, xlinesList,
-                                          plotTitle, outputFile,
+            outputFiles.append(self._plot(data, index, xlinesList, 
+                                          plotTitle, data[0, 0],
+                                          outputFile,
                                           showtime, ymin, ymax, grid))
 
     def makeOutFile(self, baselined, path, filename):

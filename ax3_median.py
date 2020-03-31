@@ -58,6 +58,7 @@ class MedianProcessor:
     def process(self, filename, window):
         """ Process the file """
         # Count number of lines in file to get array dimension
+        print(f"Median window size is {window}")
         print("Count lines in file")
         count = 0
         with open(filename, "rt", newline="\n") as fh:
