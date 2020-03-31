@@ -138,10 +138,10 @@ def main():
 
         if window < 0:
             print(f"Bad value for window, {window}, using 25")
-            window = 25
+            window = 7
         if window % 2 != 1:
             print(f"Window size must be odd, {window}, using 25")
-            window = 25
+            window = 7
             
         if extension == ".CWA":
             print("You need the .csv, not the .CWA", file=stderr)
