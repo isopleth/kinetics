@@ -1,11 +1,11 @@
 # kinetics - Open Movement AX3 etc. analysis code.
 
-These are open source accelerometer based data loggers, see
-https://github.com/digitalinteraction/openmovement My project uses
-these, and also mobile phones to collect data, which is in the same
-format as the CSV files produced for AX3 data, so we can use the same
-tools for both.  These are some of the tools, selected for their
-general usefulness.
+AX3 accelerometers are open source accelerometer based data loggers,
+see https://github.com/digitalinteraction/openmovement Several
+projects I am involved in use these devices, and some also mobile
+phones to collect data, which is in the same format as the CSV files
+produced for AX3 data, so we can use the same tools for both.  These
+are some of the tools, selected for their general usefulness.
 
 The format for the CSV files is either the AX3 type format:
 
@@ -55,8 +55,10 @@ from the CWA file.
 
 ### ax3_split.py
 
-Split AX3 CSV data file into per-day files.  The command line parameter is the CSV file, produced by cwa.py
-The output files have the date of the data in them appended to the name part of the filename.
+Split AX3 CSV data file into per-day files.  The command line
+parameter is the CSV file, produced by cwa.py The output files have
+the date of the data in them appended to the name part of the
+filename.
 
 For example:
 
@@ -75,17 +77,52 @@ Output file is ..//myDataFile_2020-02-04.csv
 Output file is ..//myDataFile_2020-02-05.csv
 ```
 
+### ax3_stats.py
+
+Generate descriptive statistics for the AX3 CSV file produced by cwa.py.  Also produces three new output files. These are:
+
+* The CSV file with the date/time field converted to epoch and a total acceleration field added
+* A CSV file with aggregated data for each minute
+* A CSV file with aggregated data for each minute after the mean value for that minute has been subtracted
+
+The first file is used as the input file to some other programs, like ax3_seconds_stats.py
+
+For the last two files, the  fields are:
+
+* Epoch time of this minute
+* minute number (0 is first minute in file)
+* number of readings in this minute
+* x axis rms acceleration
+* x axis peak to peak acceleration
+* x axis mean acceleration
+* x axis standard deviation
+* y axis mean acceleration
+* y axis peak to peak acceleration
+* y axis rms acceleration
+* y axis standard deviation
+* z axis mean acceleration
+* z axis peak to peak acceleration
+* z axis rms acceleration
+* z axis standard deviation
+* total acceleration mean acceleration
+* total acceleration peak to peak acceleration
+* total acceleration rms acceleration
+* total acceleration standard deviation
+* is baselined - a flag that is 0 for non-baselined data, 1 for baselined
+
 ### ax3_median.py
 
-Median filter AX3 CSV data.
+Median filter for AX3 CSV data.  It takes a CSV file in the format produced by
+cwa.py and applies a median filter to the x, y and z axis entries.  The resulting output file is the same as input file, but with "median" prepended to it.
+e.g. fred.csv -> median_fred.csv.
 
 The command line options are:
 
-* `--window WINDOW`  Set the window size, which must be an odd number. Default is 25.
+* `--window WINDOW`  Set the window size, which must be an odd number. Default is 7.
 
 ### ax3_plot_minutes.py
 
-Plot minutes data.
+Plot minutes data, i.e. the per-minute aggregated data produced by ax3_stats.py.
 
 ```
 usage: ax3_plot_minutes.py [-h] [--controlfile [CONTROLFILE]]
@@ -112,35 +149,28 @@ optional arguments:
 
 ### ax3_seconds_stats.py
 
-### ax3_stats.py
+This attempts to aggregate multiple values into ones per second to reduce the
+amount of data that needs to be processed.  It produces several output files:
 
-Generate descriptive statistics for AX3 CSV file.  Also produces three new output files. These are
-* The CSV file with the date/time field converted to epoch and a total acceleration field added
-* A CSV file with aggregated data for each minute
-* A CSV file with aggregated data for each minute after the mean value for that minute has been subtracted
+* file of per second means of x y and z axes
+* file of per second means of x y and z axes
+* file of per second means of x y and z axes with absolute values below the limit parameter on the specified axis set to zero
 
-For the last two files, the  fields are:
 
-* Epoch time of this minute
-* minute number (0 is first minute in file)
-* number of readings in this minute
-* x axis rms acceleration
-* x axis peak to peak acceleration
-* x axis mean acceleration
-* x axis standard deviation
-* y axis mean acceleration
-* y axis peak to peak acceleration
-* y axis rms acceleration
-* y axis standard deviation
-* z axis mean acceleration
-* z axis peak to peak acceleration
-* z axis rms acceleration
-* z axis standard deviation
-* total acceleration mean acceleration
-* total acceleration peak to peak acceleration
-* total acceleration rms acceleration
-* total acceleration standard deviation
-* is baselined - a flag that is 0 for non-baselined data, 1 for baselined
+```
+usage: ax3_seconds_stats.py [-h] [--axis AXIS] [--limit LIMIT] filename
+
+Convert accelerometer file to per second values
+
+positional arguments:
+  filename       Input filename
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --axis AXIS    Axis number
+  --limit LIMIT  +/- limit, default is 5 (percent)
+  ```
+
 
 ### ax3_crunch.py
 
