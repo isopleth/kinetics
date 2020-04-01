@@ -131,7 +131,7 @@ def main():
     elapsed = time.time();
     process(filePath, controlFile)
     elapsed = time.time() - elapsed
-    print(f"Elapsed tile {elapsed}")
-        
+    print(f"Elapsed time {elapsed} seconds")
+
 if __name__ == "__main__":
     main()
