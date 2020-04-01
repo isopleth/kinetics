@@ -16,12 +16,19 @@ import configparser
 import cwa
 import os
 import sys
-import timeit
+import time
 
 def get(config, section, key):
     if key in config[section]:
         return config[section][key]
     return None
+
+def getb(config, section, key):
+    """ Get boolean value from config file """
+    value = get(config, section, key)
+    if value is None:
+        return False
+    return bool(value)
 
 def process(file, configFile):
 
@@ -71,41 +78,33 @@ def process(file, configFile):
                      "rms_total",
                      "std_dev_total"]
 
-        # Make sure that there are defaults
-
-
         for thisPlot in plotType:
-            plotMinutes = ax3_plot_minutes.PlotMinutes()
+            if getb(config, thisPlot, "ax3_plot_minutes"):
+                plotMinutes = ax3_plot_minutes.PlotMinutes()
 
-            configSection = config[thisPlot]
-            # Defaults if not specified, even in DEFAULT section
+                bcontrolfile = get(config, thisPlot, "bcontrolfile")
+                nbcontrolfile = get(config, thisPlot, "nbcontrolfile")
 
-            bcontrolfile = get(config, thisPlot, "bcontrolfile")
-            nbcontrolfile = get(config, thisPlot, "nbcontrolfile")
+                showtime = getb(config, thisPlot, "showtime")
 
-            showtime = get(config, thisPlot, "showtime")
-            if showtime is not None:
-                showtime = bool(showtime)
+                grid = getb(config, thisPlot, "grid")
 
-            grid = get(config, thisPlot, "grid")
-            if grid is not None:
-                grid = bool(grid)
-
-            ymin = get(config, thisPlot, "ymin")
-            if ymin is not None:
+                ymin = get(config, thisPlot, "ymin")
+                if ymin is not None:
                     ymin = float(ymin)
 
-            ymax = get(config, thisPlot, "ymax")
-            if ymax is not None:
-                ymax = float(ymax)
+                ymax = get(config, thisPlot, "ymax")
+                if ymax is not None:
+                    ymax = float(ymax)
 
-            text = get(config, thisPlot, "text")
-            # Only one config file for the baselined and nonbaselined files at the moment
-            plotMinutes(nonBaselinedFile, nbcontrolfile,
-                        showtime, ymin, ymax, thisPlot, grid)
-            plotMinutes(baselinedFile, bcontrolfile,
-                        showtime, ymin, ymax, thisPlot, grid)
+                # Only one config file for the baselined and nonbaselined
+                # files at the moment
+                plotMinutes(nonBaselinedFile, nbcontrolfile,
+                            showtime, ymin, ymax, thisPlot, grid)
+                plotMinutes(baselinedFile, bcontrolfile,
+                            showtime, ymin, ymax, thisPlot, grid)
 
+        if getb(config, thisPlot, "ax3_seconds_stat"):
             limit = get(config, "seconds_stat", "limit")
             if limit is not None:
                 limit = float(limit)
@@ -129,7 +128,9 @@ def main():
         print("You need the .CWA, not the .csv", file=stderr)
         os.exit(0)
             
-    elapsed = timeit.timeit(process(filePath, controlFile))
+    elapsed = time.time();
+    process(filePath, controlFile)
+    elapsed = time.time() - elapsed
     print(f"Elapsed tile {elapsed}")
         
 if __name__ == "__main__":
