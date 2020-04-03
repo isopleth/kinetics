@@ -261,6 +261,7 @@ class Minutes:
                   "is baselined flag")
 
             writer = csv.writer(outfile)
+            noDataMinutes = []
             for minute in range(0, self.interval):
                 rmsx = np.sqrt(np.mean(np.square(self.x[minute])))
                 rmsy = np.sqrt(np.mean(np.square(self.y[minute])))
@@ -270,7 +271,7 @@ class Minutes:
                 if baseline:
                     baselineVal = 1
                 if self.x[minute].size == 0:
-                    print(f"No data for minute {minute}")
+                    noDataMinutes.append(minute)
                 else:
                     # Order of fields is MPRS
                     writer.writerow([self.epoch[minute],
@@ -293,6 +294,8 @@ class Minutes:
                                      rmstot,
                                      self.tot[minute].std(),
                                      baselineVal])
+        if len(noDataMinutes) != 0:
+            print(f"No data for minutes {noDataMinutes}")
         return outputFilename
 
     def toMinute(self, second):
@@ -319,13 +322,6 @@ def stats(filePath):
     summarise("z", processor.z);
     summarise("total", processor.tot);
     print()
-    # This used to subtract the mean from each value
-    # print("---Subtract mean from each value to baseline---")
-    # processor.subtractMeans()
-    # summarise("x", processor.x);
-    # summarise("y", processor.y);
-    # summarise("z", processor.z);
-    # summarise("total", processor.tot);
 
     minutes = Minutes()
     # Run without baselining the minutes data
