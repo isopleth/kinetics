@@ -1,4 +1,32 @@
 #!/usr/bin/env python3
+# coding=UTF-8
+#
+# BSD 2-Clause License
+#
+# Copyright (c) 2019, Jason Leake
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
 #
 # Process one CWA file.  The file is specified on the command line:
@@ -60,27 +88,13 @@ def process(file, configFile):
     for splitFile in splitFiles:
         datafile, nonBaselinedFile, baselinedFile = ax3_stats.stats(splitFile)
 
-        # Get the file titles from ax3_plot_minutes.py directly, later
-        plotType = [ "mean_x",
-                     "peak_to_peak_x",
-                     "rms_x",
-                     "std_dev_x",
-                     "mean_y",
-                     "peak_to_peak_y",
-                     "rms_y",
-                     "std_dev_y",
-                     "mean_z",
-                     "peak_to_peak_z",
-                     "rms_z",
-                     "std_dev_z",
-                     "mean_total",
-                     "peak_to_peak_total",
-                     "rms_total",
-                     "std_dev_total"]
-
-        for thisPlot in plotType:
+        plotMinutes = ax3_plot_minutes.PlotMinutes()
+        for thisPlot in plotMinutes.fileTitles():
+            if len(thisPlot) == 0:
+                continue
+            
             if getb(config, thisPlot, "ax3_plot_minutes"):
-                plotMinutes = ax3_plot_minutes.PlotMinutes()
+
 
                 bcontrolfile = get(config, thisPlot, "bcontrolfile")
                 nbcontrolfile = get(config, thisPlot, "nbcontrolfile")
@@ -116,7 +130,9 @@ def main():
     parser = argparse.ArgumentParser(description=
                                      "Processing chain for ax3_... scripts")
     parser.add_argument("filename", help="Input filename")
-    parser.add_argument("--controlfile", nargs="?", help="INI file to control plotting", default="crunch_default.ini")
+    parser.add_argument("--controlfile", nargs="?",
+                        help="INI file to control plotting",
+                        default="crunch_default.ini")
     args = parser.parse_args()
     filePath = args.filename
     controlFile = args.controlfile
@@ -131,7 +147,7 @@ def main():
     elapsed = time.time();
     process(filePath, controlFile)
     elapsed = time.time() - elapsed
-    print(f"Elapsed time {elapsed} seconds")
+    print(f"Elapsed time {int(round(elapsed))} seconds")
 
 if __name__ == "__main__":
     main()
