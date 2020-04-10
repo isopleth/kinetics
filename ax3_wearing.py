@@ -41,14 +41,17 @@
 # X is the long axis
 # Y is the across-the-device axis
 # Z is across the thickness of the device
-import numpy as np
-import argparse
-import sys
-from tkinter import filedialog
-import tkinter as tk
-import csv
+
 from Row import Row
+from tkinter import filedialog
+import argparse
+import csv
+import matplotlib.dates as mdate
+import matplotlib.pyplot as plt
+import numpy as np
 import os
+import sys
+import tkinter as tk
 
 class Processor:
 
@@ -57,22 +60,61 @@ class Processor:
         path, file = os.path.split(filename)
         name, ext = os.path.splitext(file)
         newName = "wearing_" + str(threshold) + "_" + name;
-        
+
         newPlotName = newName + ".pdf"
         newName = newName + ".csv"
-        
-        plotFilePath = os.path.join(path, newName)
-        dataFilePath = os.path.join(path, newPlotName)
+
+        plotFilePath = os.path.join(path, newPlotName)
+        dataFilePath = os.path.join(path, newName)
         print("Plot file is", plotFilePath)
         print("Output file is", dataFilePath)
         return [plotFilePath, dataFilePath]
 
     def _plot(self, plotFilename,
+              threshold,
+              epochTimestamps,
               maxAccPerSecond,
               aboveThresholdValues,
-              movementDetected):
-        pass
-              
+              inUse):
+        """ Generate the plot """
+
+        # Index 0 of data is epoch time
+        seconds = mdate.epoch2num(epochTimestamps)
+        print(seconds)
+        dateFormat = "%H:%M"
+        dateFormatter = mdate.DateFormatter(dateFormat)
+        locator = mdate.HourLocator(interval=6)
+        locator.MAXTICKS = 5000
+
+        fig, axis = plt.subplots(3)
+
+        for index in range(3):
+            axis[index].grid(True)
+            axis[index].xaxis.set_major_locator(locator)
+            axis[index].xaxis.set_minor_locator(mdate.HourLocator())
+            axis[index].xaxis.set_major_formatter(dateFormatter)
+            axis[index].set_xlabel("Time")
+
+        axis[0].set_title(f"Threshold for total acc = {threshold}g")
+        axis[0].set_ylabel("Acceleration (g)")
+        axis[0].plot(seconds, maxAccPerSecond, label="max total acc")
+
+        axis[1].set_yticks([0,1])
+        axis[1].set_yticklabels(["false","true"])
+        axis[1].set_ylabel("Above threshold")
+        axis[1].plot(seconds, aboveThresholdValues, label="above threshold")
+
+        axis[2].set_yticks([0,1])
+        axis[2].set_yticklabels(["false","true"])
+        axis[2].set_ylabel("Above threshold")
+        axis[2].plot(seconds, inUse, label="in use")
+
+        plt.legend()
+        plt.savefig(plotFilename)
+        plt.draw()
+        plt.close()
+
+
     def __call__(self, filename, threshold):
         """ Process the file """
         # Count number of seconds in the file
@@ -88,11 +130,13 @@ class Processor:
                 elif firstEpoch is None:
                     firstEpoch = row.getEpoch()
                 line = self.fh.readline().strip()
-                
+
             lastEpoch = row.getEpoch()
         secondsInFile = int(lastEpoch) - int(firstEpoch) + 1
-        print(f"File contains {secondsInFile} seconds worth of data")
-        
+        days = round(secondsInFile / 86400, 1)
+        print(f"File contains {days} days ({secondsInFile} seconds) worth of data")
+
+        epochTimestamps = np.zeros(secondsInFile)
         maxAccPerSecond = np.zeros(secondsInFile)
         firstSecondEpoch = int(firstEpoch)
 
@@ -106,12 +150,13 @@ class Processor:
                     pass
                 else:
                     second = int(row.getEpoch()) - firstSecondEpoch
+                    epochTimestamps[second] = int(row.getEpoch())
                     totalAcc = row.getTotAcc()
                     if totalAcc > maxAccPerSecond[second]:
                         maxAccPerSecond[second] = totalAcc
                 line = self.fh.readline().strip()
         print(f"Max per second accelerations extracted")
-        aboveThresholdValues = maxAccPerSecond
+        aboveThresholdValues = np.copy(maxAccPerSecond)
         # Now scan through looking for movement above a threshold
         for second in range(len(aboveThresholdValues)):
             if aboveThresholdValues[second] < threshold:
@@ -120,23 +165,25 @@ class Processor:
         print(f"Determining periods of movement")
         # Scan through the above threshold values to set +/-5 minutes to
         # 1 when there is an above threshold value
-        movementDetected = np.zeros(secondsInFile)
+        inUse = np.zeros(secondsInFile)
         for second in range(len(aboveThresholdValues)):
             if aboveThresholdValues[second] > 0:
                 # Set the previous 5 * 60 values, less one, to 1
                 backIndex = second - ((4 * 60) + 59)
                 for index in range(backIndex, second):
-                    movementDetected[index] = 1
+                    inUse[index] = 1
                 # Set the next 5 * 60 values to 1
                 for index in range(second, second + (5*60)):
                     aboveThresholdValues[second] = 1
 
         plotFilename, outputFilename = self.makeOutFile(filename, threshold)
         self._plot(plotFilename,
+                   threshold,
+                   epochTimestamps,
                    maxAccPerSecond,
                    aboveThresholdValues,
-                   movementDetected)
-        
+                   inUse)
+
         # Output this as a data file
         outfile = open(outputFilename, "w")
         with outfile:
@@ -144,19 +191,20 @@ class Processor:
             for second in range(len(aboveThresholdValues)):
                 writer.writerow([int(firstEpoch) + second,
                                  second,
-                                 maxAccPerSecond[second],
+                                 round(maxAccPerSecond[second],6),
                                  aboveThresholdValues[second],
-                                 movementDetected[second]])
+                                 inUse[second]])
+
         return [plotFilename, outputFilename]
-    
+
 def main():
     """ Command line entry point
     """
     parser = argparse.ArgumentParser(description=
                                      "Descriptive statistics for accelerometer file")
     parser.add_argument("filename", help="Input filename")
-    parser.add_argument("threshold", help="Threshold",
-                        type=float, default="0.1")
+    parser.add_argument("threshold", help="Threshold",  nargs="?",
+                        type=float, default="1")
     args = parser.parse_args()
     filePath = args.filename
     name, extension =  os.path.splitext(filePath)
@@ -164,10 +212,10 @@ def main():
     if extension == ".CWA":
         print("You need the .csv, not the .CWA", file=stderr)
         os.exit(0)
-            
+
     processor = Processor()
     plotfile, datafile = processor(args.filename, args.threshold)
-    
+
 if __name__ == "__main__":
     main()
 
