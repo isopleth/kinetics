@@ -87,6 +87,30 @@ class PlotMinutes:
         plt.close()
         return outputfile
 
+    def fileTitles(self):
+        """ Return list of file title components.  If empty, no plot should be produced
+        """
+        # Order of fields is MPRS
+        return [ "",
+                 "",
+                 "",
+                 "mean_x",
+                 "peak_to_peak_x",
+                 "rms_x",
+                 "std_dev_x",
+                 "mean_y",
+                 "peak_to_peak_y",
+                 "rms_y",
+                 "std_dev_y",
+                 "mean_z",
+                 "peak_to_peak_z",
+                 "rms_z",
+                 "std_dev_z",
+                 "mean_total",
+                 "peak_to_peak_total",
+                 "rms_total",
+                 "std_dev_total"]
+
     def __call__(self, filename, controlFile=None, showtime=False,
                  ymin=None, ymax=None, selectedPlot=None, grid=False):
         """Process a CSV file of per-minute data as produced by ax3_stats.py.
@@ -150,34 +174,8 @@ class PlotMinutes:
                   "RMS of tot acceleration over minute",
                   "std dev of tot acceleration over minute"]
 
-        # These are the titles of the graphics files.  Empty string
-        # means no file is produced.  Each file plots minutes against
-        # the CSV field corresponding to the current index into this
-        # array. e.g. mean_x is index 3, so the mean_x file plots
-        # minutes against (zero based) column #3, which is the mean x
-        # values per minute
-
-        # Order of fields is MPRS
-        fileTitle = [ "",
-                      "",
-                      "",
-                      "mean_x",
-                      "peak_to_peak_x",
-                      "rms_x",
-                      "std_dev_x",
-                      "mean_y",
-                      "peak_to_peak_y",
-                      "rms_y",
-                      "std_dev_y",
-                      "mean_z",
-                      "peak_to_peak_z",
-                      "rms_z",
-                      "std_dev_z",
-                      "mean_total",
-                      "peak_to_peak_total",
-                      "rms_total",
-                      "std_dev_total"]
-
+        fileTitle = self.fileTitles()
+            
         # All the interesting stuff happens in the first few mins in
         # some datasets.  This is the code for producing plots which
         # are limited and annotated by the optional config file
