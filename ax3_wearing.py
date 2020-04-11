@@ -52,6 +52,7 @@ import numpy as np
 import os
 import sys
 import tkinter as tk
+import matplotlib.ticker as ticker
 
 class Processor:
 
@@ -80,10 +81,14 @@ class Processor:
 
         # Index 0 of data is epoch time
         seconds = mdate.epoch2num(epochTimestamps)
-        print(seconds)
+
         dateFormat = "%H:%M"
         dateFormatter = mdate.DateFormatter(dateFormat)
-        locator = mdate.HourLocator(interval=6)
+        if len(seconds) > 12 * 60 * 60:
+            locator = mdate.HourLocator(interval=6)
+        else:
+            print("Less than 12 hours")
+            locator = mdate.HourLocator(interval=1)
         locator.MAXTICKS = 5000
 
         fig, axis = plt.subplots(3)
@@ -91,7 +96,7 @@ class Processor:
         for index in range(3):
             axis[index].grid(True)
             axis[index].xaxis.set_major_locator(locator)
-            axis[index].xaxis.set_minor_locator(mdate.HourLocator())
+            axis[index].xaxis.set_minor_locator(ticker.NullLocator())
             axis[index].xaxis.set_major_formatter(dateFormatter)
             axis[index].set_xlabel("Time")
 
