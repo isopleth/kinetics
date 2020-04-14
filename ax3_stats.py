@@ -56,12 +56,12 @@ class StatsProcessor:
 
     def __call__(self, filename):
         """ Process the file """
-        # Count number of lines in file to get array dimension
+        # Count number of valid lines in file to get array dimension
         count = 0
         with open(filename, "rt", newline="\n") as self.fh:
             line = self.fh.readline().strip()
             while line:
-                row = Row(line)
+                row = Row(line, decode=False)
                 if row.skip:
                     pass
                 else:
@@ -236,32 +236,14 @@ class Minutes:
         outputFilename = self.makeOutFile(processor, baseline)
         outfile = open(outputFilename, "w")
         with outfile:
-            # Order of fields is MPRS
-            print()
-            print("fields in CSV file are: " +
-                  "epoch," +
-                  "minute," +
-                  "size," +
-                  "x mean," +
-                  "x peak to peak," +
-                  "x rms," +
-                  "x std dev," +
-                  "y mean," +
-                  "y peak to peak," +
-                  "y rms," +
-                  "y std dev," +
-                  "z mean," +
-                  "z peak to peak," +
-                  "z rms," +
-                  "z std dev," +
-                  "tot mean," +
-                  "tot peak to peak," +
-                  "tot rms," +
-                  "tot std dev," +
-                  "is baselined flag")
-
             writer = csv.writer(outfile)
             noDataMinutes = []
+            # Order of fields is MPRS
+            writer.writerow(["epoch", "minute", "size", "x mean", "x peak to peak", "x rms", "x std dev",
+                             "y mean", "y peak to peak", "y rms", "y std dev", "z mean",
+                             "z peak to peak", "z rms", "z std dev", "tot mean", "tot peak to peak",
+                             "tot rms", "tot std dev", "is baselined flag"])
+
             for minute in range(0, self.interval):
                 rmsx = np.sqrt(np.mean(np.square(self.x[minute])))
                 rmsy = np.sqrt(np.mean(np.square(self.y[minute])))
@@ -305,11 +287,13 @@ class Minutes:
 
 def summarise(type, array):
     """ Summarise array"""
-    while len(type) < 6:
-        type = type + " "
-    print(f"{type} -- n={array.size}, min={array.min():.2f}, " +
-          f"max={array.max():.2f}, mean={array.mean():.2f}, " +
-          f"std dev={array.std():.2f}, peak to peak={array.ptp():.2f}")
+    print(f"{type}")
+    print(f"-- n={array.size},")
+    print(f"   min={array.min():.2f}")
+    print(f"   max={array.max():.2f}")
+    print(f"   mean={array.mean():.2f}")
+    print(f"   std dev={array.std():.2f}")
+    print(f"   peak to peak={array.ptp():.2f}")
 
 def stats(filePath):
     """ Main processing function

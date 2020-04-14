@@ -62,7 +62,7 @@ class Processor:
         with open(filename, "rt", newline="\n") as self.fh:
             line = self.fh.readline().strip()
             while line:
-                row = Row(line, True, False)
+                row = Row(line, True, True)
                 if row.skip:
                     pass
                 else:

@@ -38,7 +38,7 @@ import time
 class Row:
     """ Represents a row from the input file
     """
-    
+
     def __init__(self, line, verbose=True, decode=True):
         """Initializer.  line is the line read from the AX3 CSV file.
         verbose is True to output information messages.  decode is
@@ -57,22 +57,29 @@ class Row:
         self.time = None
         self.rawLine = line
 
-        line = line.strip()
-        fields = line.split(",")
-        if len(fields) != 4:
-            print(f"Ignore {line}, {len(fields)} fields", file=sys.stderr)
-            self.skip = True
-            return
-
-        if fields[0] == "datetime":
+        if line.startswith("datetime"):
             if verbose:
                 print(f"Skip header line {line}", file=sys.stderr)
             self.skip = True
             return
-            
-        self.timestamp = fields[0].strip()
-        self.date, self.time, *rest = self.timestamp.split(" ", 1)
+
+        if line.count(",") != 3:             
+            print(f"Ignore {line}", file=sys.stderr)
+            self.skip = True
+            return
+
+        # Only decode line if it is actually going to be processed by the
+        # caller
         if decode:
+            line = line.strip()
+            fields = line.split(",")
+            if len(fields) != 4:
+                print(f"Ignore {line}, {len(fields)} fields", file=sys.stderr)
+                self.skip = True
+                return
+
+            self.timestamp = fields[0].strip()
+            self.date, self.time, *rest = self.timestamp.split(" ", 1)
             try:
                 self.val = array.array('d', [Decimal(fields[1]),
                                              Decimal(fields[2]),
@@ -86,7 +93,7 @@ class Row:
         return "{},{:.03f},{:.06f},{:.06f},{:.06f},{:.06f}".format(
             self.timestamp, self.getEpoch(), self.val[0],
             self.val[1], self.val[2], self.getTotAcc())
-            
+
     def getEpoch(self):
         """ Get the timestamp as an epoch, seconds since 1/1/1970
         """

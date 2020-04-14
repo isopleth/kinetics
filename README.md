@@ -29,17 +29,21 @@ Headers are usually generated, and may optionally be present on input files
 ### cwa.py
 
 Convert Continuous Wave Accelerometer format files (.CWA) to CSV.
-Modified version of the Python3 script from OpenMovement.  This writes its
-output to an output file instead of an SQLite database.  If the input file
-is not named on the command line, then it opens a dialogue window to get it.
+Modified version of Stefan Diewald's Python3 script from OpenMovement.
+This takes the name of a .CWA file and writes its output to an output
+file (the original writes to an SQLite database).  If the input file
+is not named on the command line, then it opens a dialogue window to
+get it.
 
-* `--verbose`
 * `--limit LIMIT` stop after outputting LIMIT lines, good for testing
-* `--version` display program version information
 * `--linux` output Linux line endings instead of MSDOS ones
+* `--noheader` don't put record "datetime, x, y, z" at top of output file
 * `--sg` use units of standard gravity instead of g. (i.e. make 9.81 = 1 unit)
+* `--verbose` display verbose logging
+* `--version` display program version information
 
-Output format is as close to OpenMovement omgui as I can make it.
+Output format is as close to OpenMovement omgui as I can make it, except for
+adding a header line "datetime, x, y, z" unless `--noheader` is specified.
 
 At the moment there is an unexplained offset of about 1 millisecond
 between the timestamps produced by OpenMovement omgui Windows program
@@ -53,28 +57,28 @@ Output files for `<input_file>.CWA` are `<input_file>.csv` and
 `<input_file>_metadata.csv`, the latter containing the metadata read
 from the CWA file.
 
+e.g.
+```
+Converting ../data/wrist.CWA, output is ../data/wrist.csv and ../data/wrist_metadata.txt
+1000000 lines of output generated
+2000000 lines of output generated
+...
+28000000 lines of output generated
+29000000 lines of output generated
+29564670 lines of output generated
+```
+
 ### ax3_split.py
 
 Split AX3 CSV data file into per-day files.  The command line
-parameter is the CSV file, produced by cwa.py The output files have
+parameter is the CSV file, produced by cwa.py. The output files have
 the date of the data in them appended to the name part of the
 filename.
 
 For example:
 
 ```
-python3 ax3_split.py ../myDataFile.csv
-Splitting ../myDatafile.csv
-Skip header line datetime, x, y, z
-
-Output file is ..//myDataFile_2020-01-29.csv
-Output file is ..//myDataFile_2020-01-30.csv
-Output file is ..//myDataFile_2020-01-31.csv
-Output file is ..//myDatafile_2020-01-01.csv
-Output file is ..//myDataFile_2020-02-02.csv
-Output file is ..//myDataFile_2020-02-03.csv
-Output file is ..//myDataFile_2020-02-04.csv
-Output file is ..//myDataFile_2020-02-05.csv
+python3 ax3_stats.py ~/data/wrist_2020-01-27.csv 
 ```
 
 ### ax3_stats.py
